@@ -14,7 +14,11 @@
     "start": "electron-forge start",
     "package": "electron-forge package",
     "make": "electron-forge make",
-    "publish": "electron-forge publish"
+    "publish": "electron-forge publish",
+    "cli": "node bin/maurya.js"
+  },
+  "bin": {
+    "maurya": "bin/maurya.js"
   },
   "dependencies": {
     "electron-squirrel-startup": "^1.0.1",

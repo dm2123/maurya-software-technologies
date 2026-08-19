@@ -1,0 +1,54 @@
+{
+  "name": "Demo API Fetch + File Write",
+  "nodes": [
+    {
+      "id": "node_trigger",
+      "type": "trigger",
+      "name": "Manual Trigger",
+      "x": 80,
+      "y": 80,
+      "config": { "triggerType": "Manual" }
+    },
+    {
+      "id": "node_http",
+      "type": "action",
+      "name": "Fetch GitHub API",
+      "x": 360,
+      "y": 80,
+      "config": {
+        "actionType": "HTTP Request",
+        "url": "https://api.github.com/repos/dm2123/maurya-software-technologies",
+        "method": "GET",
+        "retries": "2",
+        "retryDelay": "1000"
+      }
+    },
+    {
+      "id": "node_transform",
+      "type": "transform",
+      "name": "Extract Repo Info",
+      "x": 640,
+      "y": 80,
+      "config": {
+        "transform": "return { name: data.body.name, stars: data.body.stargazers_count, desc: data.body.description };"
+      }
+    },
+    {
+      "id": "node_write",
+      "type": "action",
+      "name": "Save Report",
+      "x": 920,
+      "y": 80,
+      "config": {
+        "actionType": "Write File",
+        "path": "./report.json",
+        "content": "{{data}}"
+      }
+    }
+  ],
+  "connections": [
+    { "id": "c1", "from": "node_trigger", "to": "node_http" },
+    { "id": "c2", "from": "node_http", "to": "node_transform" },
+    { "id": "c3", "from": "node_transform", "to": "node_write" }
+  ]
+}
