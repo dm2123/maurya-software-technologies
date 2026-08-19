@@ -1,7 +1,7 @@
 {
   "name": "maurya-automation-suite",
   "productName": "Maurya Automation Suite",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Cross-platform visual automation engine from Maurya Software Technologies.",
   "main": "src/main.js",
   "author": {

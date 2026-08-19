@@ -293,7 +293,7 @@ const mqttWatchers = {};
 
 async function watchArm(event, workflow) {
   const trigger = (workflow.nodes || []).find((n) => n.type === "trigger");
-  const t = String(trigger?.config?.triggerType || "").toLowerCase();
+  const t = String(trigger?.config?.triggerType || "").toLowerCase().replace(/\s+/g, "-");
   if (!["mqtt", "webhook", "file-watch", "filewatch"].includes(t)) {
     throw new Error("Workflow has no watcher trigger (MQTT / Webhook / File Watch)");
   }

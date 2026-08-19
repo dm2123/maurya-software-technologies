@@ -358,7 +358,7 @@ async function executeWorkflow(workflow, options = {}) {
 
   const env = { ctx, results, start, secrets, log, onNode, options };
   const triggerNode = order.find((n) => n.type === "trigger");
-  const triggerType = String(triggerNode?.config?.triggerType || "").toLowerCase();
+  const triggerType = String(triggerNode?.config?.triggerType || "").toLowerCase().replace(/\s+/g, "-");
 
   // Watcher / server modes keep the process alive
   if (triggerType === "mqtt") return runMqttWatch(workflow, triggerNode, order, env);

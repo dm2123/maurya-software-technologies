@@ -1005,7 +1005,7 @@
       // Watcher-triggered workflows (MQTT / Webhook / File Watch) run in watch mode
       const nodesArr = Array.from(this.state.nodes.values());
       const watcherTrigger = nodesArr.find((n) => {
-        const t = String(n.config?.triggerType || "").toLowerCase();
+        const t = String(n.config?.triggerType || "").toLowerCase().replace(/\s+/g, "-");
         return n.type === "trigger" && ["mqtt", "webhook", "file-watch", "filewatch"].includes(t);
       });
       if (watcherTrigger) {
@@ -1019,7 +1019,7 @@
 
     async armWatcher(run, triggerNode) {
       const workflow = this.serializeWorkflow();
-      const t = String(triggerNode.config.triggerType || "").toLowerCase();
+      const t = String(triggerNode.config.triggerType || "").toLowerCase().replace(/\s+/g, "-");
       const label =
         t === "webhook"
           ? `Webhook server on :${triggerNode.config.webhookPort || 3030}${triggerNode.config.webhookPath || "/webhook"}`
@@ -1124,14 +1124,14 @@
 
       switch (node.type) {
         case "trigger": {
-          const t = cfg.triggerType || "Manual";
-          if (t === "Schedule") {
+          const t = String(cfg.triggerType || "Manual").toLowerCase().replace(/\s+/g, "-");
+          if (t === "schedule") {
             return { triggered: true, type: "schedule", schedule: cfg.schedule || "0 * * * *" };
           }
-          if (t === "Webhook") {
+          if (t === "webhook") {
             return { triggered: true, type: "webhook" };
           }
-          if (t === "File Watch") {
+          if (t === "file-watch" || t === "filewatch") {
             return { triggered: true, type: "file-watch", path: cfg.path || "." };
           }
           return { triggered: true, type: "manual" };
