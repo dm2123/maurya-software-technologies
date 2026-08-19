@@ -8,6 +8,10 @@ import 'screens/runner_screen.dart';
 import 'screens/cloud_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/about_screen.dart';
+import 'screens/products_screen.dart';
+import 'screens/services_screen.dart';
+import 'screens/downloads_screen.dart';
+import 'screens/privacy_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -31,6 +35,10 @@ class MyApp extends StatelessWidget {
           '/cloud': (c) => const CloudScreen(),
           '/settings': (c) => const SettingsScreen(),
           '/about': (c) => const AboutScreen(),
+          '/products': (c) => const ProductsScreen(),
+          '/services': (c) => const ServicesScreen(),
+          '/downloads': (c) => const DownloadsScreen(),
+          '/privacy': (c) => const PrivacyScreen(),
         },
       );
 }

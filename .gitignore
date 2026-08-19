@@ -25,4 +25,7 @@ package-lock.json.bak
 desktop/report.json
 desktop/out/
 
+# Local APK deliverables (CI publishes these to GitHub Releases)
+*.apk
+
 

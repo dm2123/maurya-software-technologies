@@ -12,6 +12,12 @@ class HomeScreen extends StatelessWidget {
         builder: (context, _) => Scaffold(
           appBar: AppBar(
             title: const Text('Maurya Automation'),
+            leading: Builder(
+              builder: (context) => IconButton(
+                icon: const Icon(Icons.menu),
+                onPressed: () => Scaffold.of(context).openDrawer(),
+              ),
+            ),
             actions: [
               IconButton(
                 icon: const Icon(Icons.cloud_outlined),
@@ -27,6 +33,7 @@ class HomeScreen extends StatelessWidget {
               ),
             ],
           ),
+          drawer: const _HomeDrawer(),
           body: appState.loading
               ? const Center(child: CircularProgressIndicator())
               : appState.workflows.isEmpty
@@ -84,6 +91,68 @@ class HomeScreen extends StatelessWidget {
               ),
             ),
             child: const Icon(Icons.add),
+          ),
+        ),
+      );
+}
+
+class _HomeDrawer extends StatelessWidget {
+  const _HomeDrawer();
+
+  @override
+  Widget build(BuildContext context) => Drawer(
+        child: SafeArea(
+          child: Column(
+            children: [
+              const Padding(
+                padding: EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    Icon(Icons.auto_awesome, size: 32),
+                    SizedBox(width: 10),
+                    Text('Maurya Automation',
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  ],
+                ),
+              ),
+              const Divider(),
+              Expanded(
+                child: ListView(
+                  children: [
+                    ListTile(
+                      leading: const Icon(Icons.home_outlined),
+                      title: const Text('Home'),
+                      onTap: () => Navigator.pop(context),
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.category_outlined),
+                      title: const Text('Products'),
+                      onTap: () => Navigator.pushNamed(context, '/products'),
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.work_outline),
+                      title: const Text('Services'),
+                      onTap: () => Navigator.pushNamed(context, '/services'),
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.download_outlined),
+                      title: const Text('Downloads'),
+                      onTap: () => Navigator.pushNamed(context, '/downloads'),
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.contact_mail_outlined),
+                      title: const Text('About / Contact'),
+                      onTap: () => Navigator.pushNamed(context, '/about'),
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.privacy_tip_outlined),
+                      title: const Text('Privacy'),
+                      onTap: () => Navigator.pushNamed(context, '/privacy'),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
       );
