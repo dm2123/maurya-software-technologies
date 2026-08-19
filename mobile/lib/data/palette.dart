@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 class NodeTemplate {
   final String type;
   final String category;

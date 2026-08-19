@@ -3,7 +3,7 @@ import 'dart:convert';
 class FlowNode {
   final String id;
   final String type;
-  final String name;
+  String name;
   Map<String, dynamic> config;
   double x;
   double y;
