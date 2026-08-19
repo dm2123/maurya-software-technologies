@@ -1064,6 +1064,47 @@ ul, ol { list-style: none; }
 .about-credits ul { display: flex; flex-direction: column; gap: 6px; }
 .about-credits li { font-size: 11px; color: var(--muted-soft); }
 
+.secret-add, .scheduler-add {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+.secret-add input, .scheduler-add input {
+  flex: 1;
+  min-width: 140px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--paper-soft);
+  color: var(--ink);
+  font-size: 12px;
+}
+.secret-add .btn, .scheduler-add .btn { flex-shrink: 0; }
+
+.secrets-list, .schedules-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.secret-row, .schedule-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--paper);
+}
+.secret-row strong, .schedule-row strong { font-size: 13px; }
+.secret-row small, .schedule-row small { font-size: 11px; color: var(--muted-soft); }
+.secret-actions, .schedule-actions { display: flex; gap: 8px; }
+.secret-row .btn, .schedule-row .btn { padding: 6px 12px; font-size: 11px; }
+.secret-empty, .schedule-empty { padding: 24px; text-align: center; color: var(--muted-soft); font-size: 12px; }
+.schedule-enabled { color: var(--lime); }
+.schedule-disabled { color: var(--muted); }
+
 .modal-overlay {
   position: fixed;
   inset: 0;

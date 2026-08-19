@@ -21,7 +21,17 @@ contextBridge.exposeInMainWorld("maurya", {
   // Script execution
   runScript: (script, lang) => ipcRenderer.invoke("script:run", { script, lang }),
 
+  // AI / LLM
+  aiQuery: (config) => ipcRenderer.invoke("ai:query", config),
+
   // Secrets vault
   getSecret: (key) => ipcRenderer.invoke("secret:get", key),
   setSecret: (key, value) => ipcRenderer.invoke("secret:set", key, value),
+
+  // Scheduler
+  getSchedules: () => ipcRenderer.invoke("scheduler:list"),
+  addSchedule: (schedule) => ipcRenderer.invoke("scheduler:add", schedule),
+  removeSchedule: (id) => ipcRenderer.invoke("scheduler:remove", id),
+  runScheduledNow: (id) => ipcRenderer.invoke("scheduler:runNow", id),
+  onScheduleExecute: (cb) => ipcRenderer.on("schedule:execute", (_e, workflow) => cb(workflow)),
 });

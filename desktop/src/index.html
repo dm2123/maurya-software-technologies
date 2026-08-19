@@ -315,6 +315,14 @@
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
               About
             </button>
+            <button class="setting-nav-item" data-setting="secrets" type="button">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+              Secrets
+            </button>
+            <button class="setting-nav-item" data-setting="scheduler" type="button">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><polyline points="12 7 12 12 15 14"></polyline></svg>
+              Scheduler
+            </button>
           </nav>
           <div class="settings-content">
             <div class="setting-pane active" id="setting-general">
@@ -406,6 +414,30 @@
                 <h4>Danger Zone</h4>
                 <button class="btn btn-ghost danger" id="reset-all-data" type="button">Reset All Data</button>
                 <button class="btn btn-ghost danger" id="clear-cache" type="button">Clear Cache</button>
+              </div>
+            </div>
+            <div class="setting-pane" id="setting-secrets">
+              <h3>Secrets Vault</h3>
+              <p class="muted">Store API keys and credentials locally (encrypted at rest in userData). Referenced by AI, Email, and custom actions.</p>
+              <div class="setting-group">
+                <div id="secrets-list"></div>
+                <div class="secret-add">
+                  <input type="text" id="secret-key" placeholder="Key (e.g. ai_openai)">
+                  <input type="password" id="secret-value" placeholder="Value / API key">
+                  <button class="btn btn-primary" id="secret-add-btn" type="button">Add</button>
+                </div>
+              </div>
+            </div>
+            <div class="setting-pane" id="setting-scheduler">
+              <h3>Scheduler</h3>
+              <p class="muted">Run workflows on a cron schedule in the background. The app stays alive in the system tray.</p>
+              <div class="setting-group">
+                <div id="schedules-list"></div>
+                <div class="scheduler-add">
+                  <input type="text" id="schedule-name" placeholder="Name">
+                  <input type="text" id="schedule-cron" placeholder="0 * * * *" value="0 * * * *">
+                  <button class="btn btn-primary" id="schedule-add-btn" type="button">Add</button>
+                </div>
               </div>
             </div>
             <div class="setting-pane" id="setting-about">
