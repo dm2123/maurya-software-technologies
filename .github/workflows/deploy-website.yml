@@ -32,10 +32,15 @@ jobs:
         with:
           enablement: true
 
+      - name: Stage Pages site
+        run: |
+          mkdir -p _site
+          cp -R website/. _site/
+
       - name: Upload website
         uses: actions/upload-pages-artifact@v3
         with:
-          path: website
+          path: _site
 
       - name: Deploy to GitHub Pages
         id: deployment
