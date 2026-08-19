@@ -3,7 +3,7 @@ import 'interpolate.dart';
 /// Minimal expression evaluator for condition / transform / filter nodes.
 /// Supports: numbers, 'strings', true/false/null, dotted identifiers
 /// (item.x, vars.x, data.x), operators + - * / % , comparisons == != < > <= >=,
-/// `contains`, logical && ||, unary ! and parentheses.
+/// `contains`, logical && ||, null-coalescing ??, unary ! and parentheses.
 class ExprEvaluator {
   final List<_Tok> _toks;
   int _pos = 0;
@@ -13,7 +13,15 @@ class ExprEvaluator {
 
   dynamic parse() {
     if (_toks.isEmpty) return true;
-    final v = _or();
+    return _coalesce();
+  }
+
+  dynamic _coalesce() {
+    var v = _or();
+    while (_is('qq')) {
+      _next();
+      v ??= _or();
+    }
     return v;
   }
 
@@ -80,7 +88,7 @@ class ExprEvaluator {
       final op = _next().type;
       final r = _mul();
       v = op == 'add'
-          ? (_str(v) + _str(r))
+          ? ((v is num && r is num) ? (_num(v) + _num(r)) : (_str(v) + _str(r)))
           : (_num(v) + _num(r));
     }
     return v;
@@ -127,8 +135,13 @@ class ExprEvaluator {
       final parts = t.value.split('.');
       dynamic v = _resolve(parts[0]);
       for (final p in parts.skip(1)) {
-        if (v is Map) v = v[p];
-        else return null;
+        if (v is List && p == 'length') {
+          v = v.length;
+        } else if (v is Map) {
+          v = v[p];
+        } else {
+          return null;
+        }
       }
       return v;
     }
@@ -168,7 +181,7 @@ List<_Tok> _tokenize(String s) {
   bool isDigit(String c) => c.compareTo('0') >= 0 && c.compareTo('9') <= 0;
   bool isIdentStart(String c) =>
       (c.toUpperCase().compareTo('A') >= 0 && c.toUpperCase().compareTo('Z') <= 0) || c == '_';
-  bool isIdentPart(String c) => isIdentStart(c) || isDigit(c);
+  bool isIdentPart(String c) => isIdentStart(c) || isDigit(c) || c == '.';
 
   while (i < s.length) {
     final c = s[i];
@@ -193,6 +206,7 @@ List<_Tok> _tokenize(String s) {
     if (c == '*') { tokens.add(_Tok('mul', '*')); i++; continue; }
     if (c == '/') { tokens.add(_Tok('div', '/')); i++; continue; }
     if (c == '%') { tokens.add(_Tok('mod', '%')); i++; continue; }
+    if (c == '?' && i + 1 < s.length && s[i + 1] == '?') { tokens.add(_Tok('qq', '??')); i += 2; continue; }
     if (c == '!') { tokens.add(_Tok('not', '!')); i++; continue; }
     if (c == '-') {
       if (tokens.isEmpty || _isOp(tokens.last.type)) { tokens.add(_Tok('neg', '-')); i++; }
@@ -231,5 +245,5 @@ List<_Tok> _tokenize(String s) {
 }
 
 bool _isOp(String t) =>
-    const {'add', 'sub', 'mul', 'div', 'mod', 'eq', 'ne', 'gt', 'lt', 'ge', 'le', 'and', 'or', 'not', 'lparen'}
+    const {'add', 'sub', 'mul', 'div', 'mod', 'eq', 'ne', 'gt', 'lt', 'ge', 'le', 'and', 'or', 'not', 'qq', 'lparen'}
         .contains(t);

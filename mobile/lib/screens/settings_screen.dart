@@ -34,7 +34,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   void dispose() {
-    for (final c in _ctrl.values) c.dispose();
+    for (final c in _ctrl.values) {
+      c.dispose();
+    }
     super.dispose();
   }
 
@@ -46,11 +48,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
       body: ListView(
         padding: const EdgeInsets.all(8),
         children: [
-          Card(
+const Card(
             child: ListTile(
-              leading: const Icon(Icons.security),
-              title: const Text('Secrets vault'),
-              subtitle: const Text('Stored locally on device (app documents). '
+              leading: Icon(Icons.security),
+              title: Text('Secrets vault'),
+              subtitle: Text('Stored locally on device (app documents). '
                   'Used by AI, Telegram, Slack, Email and Cloud Sync.'),
             ),
           ),

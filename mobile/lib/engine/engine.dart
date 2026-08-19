@@ -111,7 +111,24 @@ class AutomationEngine {
       onLog?.call('warn', 'MQTT trigger is desktop-only; running once with current state.');
     }
 
-    final body = _order.where((n) => n.id != trigger?.id).toList();
+    final inLoop = <String>{};
+    for (final n in wf.nodes) {
+      if (n.type == 'loop') {
+        final stack = <String>[n.id];
+        while (stack.isNotEmpty) {
+          final id = stack.removeLast();
+          for (final c in wf.connections) {
+            if (c.from == id && !inLoop.contains(c.to)) {
+              inLoop.add(c.to);
+              stack.add(c.to);
+            }
+          }
+        }
+      }
+    }
+    final body = _order
+        .where((n) => n.id != trigger?.id && !inLoop.contains(n.id))
+        .toList();
     try {
       for (final node in body) {
         results[node.id] = await _runNode(node, ctx, results);
@@ -135,13 +152,23 @@ class AutomationEngine {
   dynamic _resolve(String name, dynamic item, _Ctx ctx) {
     final parts = name.split('.');
     dynamic v;
-    if (parts[0] == 'item') v = item;
-    else if (parts[0] == 'vars') v = ctx.vars;
-    else if (parts[0] == 'data') v = ctx.lastOutput;
-    else v = ctx.vars[name] ?? ctx.lastOutput;
+    if (parts[0] == 'item') {
+      v = item;
+    } else if (parts[0] == 'vars') {
+      v = ctx.vars;
+    } else if (parts[0] == 'data') {
+      v = ctx.lastOutput;
+    } else {
+      v = ctx.vars[name] ?? ctx.lastOutput;
+    }
     for (final p in parts.skip(1)) {
-      if (v is Map) v = v[p];
-      else return null;
+      if (v is List && p == 'length') {
+        v = v.length;
+      } else if (v is Map) {
+        v = v[p];
+      } else {
+        return null;
+      }
     }
     return v;
   }
@@ -262,8 +289,11 @@ class AutomationEngine {
       headers[k.toString()] = interpolate(v.toString(), ctx.lastOutput, ctx.vars);
     });
     dynamic body = cfg['body'];
-    if (body is String) body = interpolate(body, ctx.lastOutput, ctx.vars);
-    else if (body is Map) body = interpolateMap(Map<String, dynamic>.from(body), ctx.lastOutput, ctx.vars);
+    if (body is String) {
+      body = interpolate(body, ctx.lastOutput, ctx.vars);
+    } else if (body is Map) {
+      body = interpolateMap(Map<String, dynamic>.from(body), ctx.lastOutput, ctx.vars);
+    }
 
     final req = http.Request(method, Uri.parse(url));
     req.headers.addAll(headers);
