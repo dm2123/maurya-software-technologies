@@ -135,9 +135,22 @@
         status.textContent = "Please enter a valid name, email, subject, and a message of at least 10 characters. Nothing was sent.";
         return;
       }
+      var subjectLine = "Project inquiry: " + subject;
+      var body = "Name: " + name + "\nEmail: " + email + "\n\n" + message;
+      var mailto = "mailto:dm7178072@gmail.com?subject=" + encodeURIComponent(subjectLine) + "&body=" + encodeURIComponent(body);
       status.className = "notice";
-      status.textContent = "Form validated locally. This static site has no mail backend, so the message was not emailed. Keep the values and connect an API later.";
+      status.textContent = "Your email application is opening with your project inquiry. If it does not open, contact Dinesh on WhatsApp.";
       form.reset();
+      window.location.href = mailto;
+    });
+  }
+
+  function initProjectLinks() {
+    qsa("[data-whatsapp-project]").forEach(function (link) {
+      link.addEventListener("click", function () {
+        var message = "Hello Dinesh, I want to discuss a software or automation project.";
+        link.href = "https://wa.me/917808658872?text=" + encodeURIComponent(message);
+      });
     });
   }
 
@@ -151,5 +164,6 @@
   initNav();
   applyDownloadLinks();
   initContactForm();
+  initProjectLinks();
   initYear();
 })();

@@ -19,14 +19,33 @@
 
   function initNav() {
     var buttons = document.querySelectorAll(".nav-btn");
+    function showView(id) {
+      buttons.forEach(function (btn) {
+        btn.classList.toggle("active", btn.getAttribute("data-view") === id);
+      });
+      document.querySelectorAll(".view").forEach(function (view) {
+        view.classList.toggle("active", view.id === "view-" + id);
+      });
+    }
+
     buttons.forEach(function (btn) {
       btn.addEventListener("click", function () {
-        buttons.forEach(function (b) { b.classList.remove("active"); });
-        btn.classList.add("active");
-        var id = btn.getAttribute("data-view");
-        document.querySelectorAll(".view").forEach(function (view) {
-          view.classList.toggle("active", view.id === "view-" + id);
-        });
+        showView(btn.getAttribute("data-view"));
+      });
+    });
+
+    document.querySelectorAll("[data-view-target]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        showView(btn.getAttribute("data-view-target"));
+      });
+    });
+  }
+
+  function initExternalLinks() {
+    document.querySelectorAll('a[href^="http:"], a[href^="https:"], a[href^="mailto:"]').forEach(function (link) {
+      link.addEventListener("click", function (event) {
+        event.preventDefault();
+        window.open(link.href, "_blank", "noopener,noreferrer");
       });
     });
   }
@@ -78,4 +97,5 @@
   initNav();
   initTheme();
   initSystem();
+  initExternalLinks();
 })();
