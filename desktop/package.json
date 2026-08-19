@@ -1,7 +1,7 @@
 {
   "name": "maurya-desktop",
   "productName": "Maurya Desktop",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Cross-platform desktop software from Maurya Software Technologies.",
   "main": "src/main.js",
   "author": {

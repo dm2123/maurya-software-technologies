@@ -3,7 +3,7 @@
 
   var CONFIG = {
     GITHUB_REPOSITORY: "dm2123/maurya-software-technologies",
-    VERSION: "1.0.0",
+    VERSION: "1.0.1",
     APP_NAME: "Maurya Desktop"
   };
 

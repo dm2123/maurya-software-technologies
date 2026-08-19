@@ -10,7 +10,7 @@ npx --yes serve website
 
 GitHub Pages deploys the `website/` directory via Actions.
 
-## Desktop (Maurya Desktop 1.0.0)
+## Desktop (Maurya Desktop 1.0.1)
 
 Requires Node.js 20+ and npm.
 

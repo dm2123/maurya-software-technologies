@@ -2,8 +2,8 @@
 
 Company website, product catalog, download center, and **Maurya Desktop** — a real Electron application for Windows, Linux, and macOS.
 
-**Founder:** Dinesh Maurya  
-**Version:** 1.0.0  
+**Founder:** Dinesh Maurya
+**Version:** 1.0.1
 **License:** MIT
 
 This repository is meant to be pushed to GitHub as-is. It does not include fake installers, fake customers, or fake download counts.
@@ -68,7 +68,7 @@ See [docs/RELEASE.md](docs/RELEASE.md).
 
 1. `GITHUB_REPOSITORY` is set to `dm2123/maurya-software-technologies` in `website/assets/app.js`
 2. Commit and push
-3. Tag and push `v1.0.0`
+3. Tag and push `v1.0.1`
 4. Actions builds Windows, Linux, and macOS and attaches assets to the GitHub Release
 5. Website download buttons use `/releases/latest/download/...`
 

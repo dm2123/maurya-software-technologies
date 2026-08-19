@@ -2,7 +2,7 @@
 
 ## Website
 
-Static files only. GitHub Pages hosts `website/`. There is no application server in v1.0.0.
+Static files only. GitHub Pages hosts `website/`. There is no application server in v1.0.1.
 
 Future backend hook: the contact form already validates `name`, `email`, `subject`, and `message`. A later service can accept the same JSON/form fields. No secrets are stored in the site.
 
@@ -27,4 +27,4 @@ The renderer cannot require Node modules.
 
 ## Versioning
 
-Displayed as **1.0.0** on the website and in Maurya Desktop. Bump both when you cut a release.
+Displayed as **1.0.1** on the website and in Maurya Desktop. Bump both when you cut a release.

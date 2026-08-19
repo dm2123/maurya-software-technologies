@@ -7,4 +7,4 @@
 
 Company: **Maurya Software Technologies**  
 Founder: **Dinesh Maurya**  
-Current version: **1.0.0**
+Current version: **1.0.1**
