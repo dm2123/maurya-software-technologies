@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -6,6 +7,7 @@ import 'package:path/path.dart' as p;
 import '../models/workflow.dart';
 import 'interpolate.dart';
 import 'eval.dart';
+import 'pdf_gen.dart';
 
 typedef LogFn = void Function(String level, String message);
 typedef NodeFn = void Function(String id, String state);
@@ -257,6 +259,8 @@ class AutomationEngine {
         final msg = interpolate(cfg['message'] ?? '', ctx.lastOutput, ctx.vars);
         onLog?.call('notify', msg);
         return {'notified': true, 'message': msg};
+      case 'email':
+        return _email(cfg, ctx);
       case 'ai completion':
       case 'ai':
         return _ai(cfg, ctx);
@@ -270,6 +274,7 @@ class AutomationEngine {
         onLog?.call('warn', 'OCR needs the desktop engine (AI vision); skipped on mobile.');
         return {'skipped': true, 'reason': 'desktop-only'};
       case 'pdf generate':
+        return _pdfGenerate(cfg, ctx);
       case 'pdf extract':
       case 'database':
         onLog?.call('warn', '$type is desktop-only; skipped on mobile.');
@@ -392,6 +397,132 @@ class AutomationEngine {
     return {'status': res.statusCode, 'ok': res.statusCode == 200};
   }
 
+  Future<dynamic> _email(Map<String, dynamic> cfg, _Ctx ctx) async {
+    final to = interpolate(cfg['to']?.toString() ?? '', ctx.lastOutput, ctx.vars);
+    final subject = interpolate(cfg['subject']?.toString() ?? '', ctx.lastOutput, ctx.vars);
+    if (to.isEmpty || subject.isEmpty) throw Exception('Email requires to + subject');
+    final host = secrets['smtp_host'] ?? cfg['smtpHost']?.toString() ?? '';
+    final user = secrets['smtp_user'] ?? cfg['smtpUser']?.toString() ?? '';
+    final pass = secrets['smtp_pass'] ?? cfg['smtpPass']?.toString() ?? '';
+    if (host.isEmpty || user.isEmpty || pass.isEmpty) {
+      onLog?.call('warn', 'No SMTP secret; skipping email to $to');
+      return {'skipped': true, 'reason': 'no-smtp-secret'};
+    }
+    final port = int.tryParse(secrets['smtp_port'] ?? '') ?? 587;
+    final secure = (secrets['smtp_secure'] ?? 'false') == 'true';
+    final from = interpolate(cfg['from']?.toString() ?? '', ctx.lastOutput, ctx.vars);
+    final text = interpolate(cfg['text']?.toString() ?? '', ctx.lastOutput, ctx.vars);
+    final html = interpolate(cfg['html']?.toString() ?? '', ctx.lastOutput, ctx.vars);
+    final msg = StringBuffer()
+      ..writeln('From: ${from.isEmpty ? user : from}')
+      ..writeln('To: $to')
+      ..writeln('Subject: $subject')
+      ..writeln('MIME-Version: 1.0')
+      ..writeln(
+          'Content-Type: ${html.isEmpty ? 'text/plain' : 'text/html'}; charset=utf-8')
+      ..writeln()
+      ..write(html.isEmpty ? text : html);
+    final messageId =
+        await _smtpSend(host, port, secure, user, pass, to, msg.toString());
+    return {'sent': true, 'messageId': messageId};
+  }
+
+  Future<String> _smtpSend(String host, int port, bool secure, String user,
+      String pass, String to, String message) async {
+    Socket socket;
+    if (secure) {
+      socket = await SecureSocket.connect(host, port,
+          timeout: const Duration(seconds: 30));
+    } else {
+      socket = await Socket.connect(host, port,
+          timeout: const Duration(seconds: 30));
+    }
+    socket.timeout(const Duration(seconds: 60));
+    var rd = _SmtpReader(socket);
+
+    Future<String> expect(int code) async {
+      final l = await rd.next();
+      if (!l.startsWith('$code')) {
+        socket.destroy();
+        throw Exception('SMTP error (expected $code): $l');
+      }
+      return l;
+    }
+
+    await expect(220);
+    socket.write('EHLO maurya.local\r\n');
+    final ehlo = <String>[await rd.next()];
+    while (ehlo.last.startsWith('250-')) {
+      ehlo.add(await rd.next());
+    }
+    if (!ehlo.last.startsWith('250')) {
+      socket.destroy();
+      throw Exception('SMTP EHLO failed: ${ehlo.last}');
+    }
+    if (!secure && ehlo.any((l) => l.toUpperCase().contains('STARTTLS'))) {
+      socket.write('STARTTLS\r\n');
+      await expect(220);
+      socket = await SecureSocket.secure(socket);
+      rd = _SmtpReader(socket);
+      socket.write('EHLO maurya.local\r\n');
+      var l = await rd.next();
+      while (l.startsWith('250-')) {
+        l = await rd.next();
+      }
+    }
+    socket.write('AUTH LOGIN\r\n');
+    await expect(334);
+    socket.write('${base64Encode(utf8.encode(user))}\r\n');
+    await expect(334);
+    socket.write('${base64Encode(utf8.encode(pass))}\r\n');
+    await expect(235);
+    socket.write('MAIL FROM:<$user>\r\n');
+    await expect(250);
+    socket.write('RCPT TO:<$to>\r\n');
+    await expect(250);
+    socket.write('DATA\r\n');
+    await expect(354);
+    socket.write(
+        '${message.replaceAll('\r\n', '\n').replaceAll('\n', '\r\n')}\r\n.\r\n');
+    final done = await rd.next();
+    String? messageId;
+    if (done.startsWith('250')) {
+      final m =
+          RegExp(r'id=\s*<([^>]+)>', caseSensitive: false).firstMatch(done);
+      messageId = m?.group(1);
+    }
+    socket.write('QUIT\r\n');
+    await socket.flush();
+    socket.destroy();
+    return messageId ?? '';
+  }
+
+  Future<dynamic> _pdfGenerate(Map<String, dynamic> cfg, _Ctx ctx) async {
+    final title = interpolate(
+        cfg['title']?.toString() ??
+            cfg['pdfTitle']?.toString() ??
+            'Maurya Automation Document',
+        ctx.lastOutput,
+        ctx.vars);
+    final content = interpolate(
+        cfg['content']?.toString() ?? cfg['pdfContent']?.toString() ?? '',
+        ctx.lastOutput,
+        ctx.vars);
+    final footerRaw = cfg['footer']?.toString() ?? cfg['pdfFooter']?.toString();
+    final footer =
+        footerRaw == null ? null : interpolate(footerRaw, ctx.lastOutput, ctx.vars);
+    final rel = interpolate(
+        cfg['path']?.toString() ?? cfg['pdfPath']?.toString() ?? 'document.pdf',
+        ctx.lastOutput,
+        ctx.vars);
+    final pdf = PdfDocument(title: title, content: content, footer: footer);
+    final bytes = pdf.build();
+    final file = File(p.join(baseDir, rel));
+    await file.parent.create(recursive: true);
+    await file.writeAsBytes(bytes);
+    return {'generated': true, 'path': rel, 'bytes': bytes.length};
+  }
+
   Future<dynamic> _runLoop(FlowNode node, _Ctx ctx, Map<String, dynamic> results) async {
     final items = _parseArray(node.config['items'], ctx.lastOutput, ctx.vars);
     final name = node.config['variable']?.toString() ?? 'item';
@@ -437,5 +568,54 @@ class AutomationEngine {
       }
     }
     return [];
+  }
+}
+
+class _SmtpReader {
+  final Socket socket;
+  final StringBuffer _buf = StringBuffer();
+  final List<Completer<String>> _waiters = [];
+  bool _started = false;
+
+  _SmtpReader(this.socket);
+
+  void _ensureListening() {
+    if (_started) return;
+    _started = true;
+    socket.listen((chunk) {
+      _buf.write(utf8.decode(chunk));
+      _pump();
+    }, onError: (Object e) {
+      _failAll(e);
+    }, onDone: () {
+      _failAll(StateError('SMTP connection closed'));
+    });
+  }
+
+  void _failAll(Object e) {
+    for (final w in _waiters) {
+      if (!w.isCompleted) w.completeError(e);
+    }
+    _waiters.clear();
+  }
+
+  void _pump() {
+    while (_waiters.isNotEmpty && _buf.toString().contains('\n')) {
+      final all = _buf.toString();
+      final idx = all.indexOf('\n');
+      final line = all.substring(0, idx).trim();
+      _buf.clear();
+      _buf.write(all.substring(idx + 1));
+      final w = _waiters.removeAt(0);
+      w.complete(line);
+    }
+  }
+
+  Future<String> next() {
+    _ensureListening();
+    final c = Completer<String>();
+    _waiters.add(c);
+    _pump();
+    return c.future.timeout(const Duration(seconds: 60));
   }
 }

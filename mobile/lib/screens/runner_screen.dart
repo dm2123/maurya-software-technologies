@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 
 import '../models/workflow.dart';
 import '../state/app_state.dart';
@@ -26,8 +27,10 @@ class _RunnerScreenState extends State<RunnerScreen> {
     wf = (arg is Workflow ? arg : Workflow(name: '', nodes: [], connections: []));
   }
 
-  bool get _isWebhook =>
-      wf.nodes.any((n) => n.type == 'trigger' && 'webhook' == n.config['triggerType'].toString().toLowerCase().replaceAll(' ', '-'));
+  bool get _isWebhook => wf.nodes.any((n) =>
+      n.type == 'trigger' &&
+      'webhook' ==
+          n.config['triggerType'].toString().toLowerCase().replaceAll(' ', '-'));
 
   Future<void> _run() async {
     setState(() {
@@ -56,11 +59,99 @@ class _RunnerScreenState extends State<RunnerScreen> {
     });
   }
 
+  Future<void> _toggleServer() async {
+    final url = appState.webhookUrlFor(wf.name);
+    if (url == null) {
+      await appState.startWebhooks();
+    } else {
+      await appState.stopWebhooks();
+    }
+  }
+
+  Future<void> _testLocal() async {
+    final url = appState.webhookUrlFor(wf.name);
+    if (url == null) return;
+    final payload = payloadCtrl.text.trim();
+    setState(() => logs.insert(0, '[info] POST $url'));
+    try {
+      final res = await http.post(
+        Uri.parse(url),
+        headers: {'content-type': 'application/json'},
+        body: payload.isEmpty ? '{}' : payload,
+      );
+      setState(() =>
+          logs.insert(0, '[info] Server → ${res.statusCode}: ${res.body}'));
+    } catch (e) {
+      setState(() => logs.insert(0, '[error] $e'));
+    }
+  }
+
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(title: Text('Run: ${wf.name}')),
         body: Column(
           children: [
+            if (_isWebhook)
+              ListenableBuilder(
+                listenable: appState,
+                builder: (context, _) {
+                  final url = appState.webhookUrlFor(wf.name);
+                  return Card(
+                    margin: const EdgeInsets.all(8),
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(Icons.dns,
+                                  color: url == null
+                                      ? Colors.grey
+                                      : Colors.green),
+                              const SizedBox(width: 8),
+                              const Text('Webhook server',
+                                  style: TextStyle(fontWeight: FontWeight.bold)),
+                              const Spacer(),
+                              Text(url == null ? 'Stopped' : 'Listening',
+                                  style: TextStyle(
+                                      color: url == null
+                                          ? Colors.grey
+                                          : Colors.green)),
+                            ],
+                          ),
+                          if (url != null)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 6),
+                              child: SelectableText(
+                                url,
+                                style: const TextStyle(
+                                    fontFamily: 'monospace', fontSize: 12),
+                              ),
+                            ),
+                          Row(
+                            children: [
+                              ElevatedButton.icon(
+                                icon: Icon(url == null
+                                    ? Icons.play_arrow
+                                    : Icons.stop),
+                                label: Text(
+                                    url == null ? 'Start server' : 'Stop server'),
+                                onPressed: _toggleServer,
+                              ),
+                              TextButton.icon(
+                                icon: const Icon(Icons.send),
+                                label: const Text('Test from this phone'),
+                                onPressed: url == null ? null : _testLocal,
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
             if (_isWebhook)
               Padding(
                 padding: const EdgeInsets.all(8),

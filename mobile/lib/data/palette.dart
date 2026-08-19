@@ -87,6 +87,28 @@ const List<NodeTemplate> nodeTemplates = [
     config: {'actionType': 'Slack', 'slackMessage': '{{data}}'},
   ),
   NodeTemplate(
+    type: 'action',
+    category: 'Action',
+    label: 'Email',
+    config: {
+      'actionType': 'Email',
+      'to': 'client@example.com',
+      'subject': 'Hello {{data}}',
+      'text': 'Message from Maurya Automation',
+    },
+  ),
+  NodeTemplate(
+    type: 'action',
+    category: 'Action',
+    label: 'PDF Generate',
+    config: {
+      'actionType': 'PDF Generate',
+      'title': 'Maurya Automation Document',
+      'content': 'Hello {{data}}',
+      'path': 'document.pdf',
+    },
+  ),
+  NodeTemplate(
     type: 'setvar',
     category: 'Control',
     label: 'Set Variable',

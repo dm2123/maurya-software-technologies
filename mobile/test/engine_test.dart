@@ -223,21 +223,18 @@ void main() {
       name: 'skip-test',
       nodes: [
         node('t', 'trigger', {'triggerType': 'Manual'}),
-        node('p', 'action', {'actionType': 'PDF Generate'}),
         node('o', 'action', {'actionType': 'OCR'}),
         node('z', 'action', {'actionType': 'Database'}),
       ],
       connections: [
-        Connection(id: 'c1', from: 't', to: 'p'),
-        Connection(id: 'c2', from: 'p', to: 'o'),
-        Connection(id: 'c3', from: 'o', to: 'z'),
+        Connection(id: 'c1', from: 't', to: 'o'),
+        Connection(id: 'c2', from: 'o', to: 'z'),
       ],
     );
 
     final engine = AutomationEngine(baseDir: tmp.path);
     final res = await engine.run(wf);
     expect(res.status, 'success');
-    expect((res.results['p'] as Map)['reason'], 'desktop-only');
     expect((res.results['o'] as Map)['reason'], 'desktop-only');
     expect((res.results['z'] as Map)['reason'], 'desktop-only');
   });
