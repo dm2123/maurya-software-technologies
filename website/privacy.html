@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Privacy | Maurya Software Technologies</title>
+  <meta name="description" content="Privacy notes for the Maurya Software Technologies website and Maurya Desktop.">
+  <meta name="robots" content="index,follow">
+  <link rel="canonical" href="https://dm2123.github.io/maurya-software-technologies/privacy.html">
+  <meta property="og:title" content="Privacy | Maurya Software Technologies">
+  <meta property="og:description" content="Local theme preference only. No analytics or account system in v1.0.0.">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="assets/logo.svg">
+  <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; connect-src 'self'; base-uri 'self'; form-action 'self';">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body data-page="privacy">
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="site-header">
+    <div class="container nav">
+      <a class="brand" href="index.html">
+        <img src="assets/logo.svg" alt="Maurya Software Technologies logo">
+        <div>Maurya Software Technologies<span>Privacy</span></div>
+      </a>
+      <button class="menu-toggle" type="button" data-menu-toggle aria-expanded="false" aria-label="Open menu">Menu</button>
+      <nav class="nav-links" data-nav-links>
+        <a href="index.html" data-nav="home">Home</a>
+        <a href="about.html" data-nav="about">About</a>
+        <a href="products.html" data-nav="products">Products</a>
+        <a href="services.html" data-nav="services">Services</a>
+        <a href="downloads.html" data-nav="downloads">Downloads</a>
+        <a href="contact.html" data-nav="contact">Contact</a>
+        <button class="theme-toggle" type="button" data-theme-cycle>Theme: <span data-theme-label>System</span></button>
+      </nav>
+    </div>
+  </header>
+  <main id="main" class="section">
+    <div class="container">
+      <p class="kicker">Privacy</p>
+      <h1>What this project stores</h1>
+      <div class="card">
+        <p>The website stores only a theme preference in localStorage (<code>mst-theme</code>). Maurya Desktop stores the same preference locally.</p>
+        <p>There is no user account system, no analytics SDK, and no server-side contact inbox in v1.0.0. GitHub will process downloads when you use Releases.</p>
+        <p>Contact form values stay in the browser unless you later connect a backend of your choosing.</p>
+      </div>
+    </div>
+  </main>
+  <footer class="footer">
+    <div class="container legal">
+      <span>&copy; <span data-year></span> Maurya Software Technologies</span>
+      <a href="index.html">Home</a>
+    </div>
+  </footer>
+  <script src="assets/app.js"></script>
+</body>
+</html>

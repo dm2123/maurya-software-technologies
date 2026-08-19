@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Maurya Software Technologies logo">
+  <defs>
+    <linearGradient id="mst-g" x1="8" y1="8" x2="56" y2="56" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#22d3ee"/>
+      <stop offset="55%" stop-color="#3b82f6"/>
+      <stop offset="100%" stop-color="#8b5cf6"/>
+    </linearGradient>
+  </defs>
+  <rect x="2" y="2" width="60" height="60" rx="16" fill="#070b16" stroke="url(#mst-g)" stroke-width="2"/>
+  <path d="M16 44V20l10 16 10-16v24" fill="none" stroke="url(#mst-g)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="46" cy="22" r="3.2" fill="#22d3ee"/>
+  <path d="M42 44c0-6 4-10 8-10" fill="none" stroke="#8b5cf6" stroke-width="3" stroke-linecap="round"/>
+</svg>

@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Download Maurya Software | Maurya Software Technologies</title>
+  <meta name="description" content="Download Maurya Desktop for Windows, Linux, and macOS from GitHub Releases.">
+  <meta name="robots" content="index,follow">
+  <link rel="canonical" href="https://dm2123.github.io/maurya-software-technologies/downloads.html">
+  <meta property="og:title" content="Download Maurya Software">
+  <meta property="og:description" content="Windows installer, Linux AppImage/DEB/RPM, and macOS DMG from GitHub Releases.">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="assets/logo.svg">
+  <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; connect-src 'self'; base-uri 'self'; form-action 'self';">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body data-page="downloads">
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="site-header">
+    <div class="container nav">
+      <a class="brand" href="index.html">
+        <img src="assets/logo.svg" alt="Maurya Software Technologies logo">
+        <div>Maurya Software Technologies<span>Downloads</span></div>
+      </a>
+      <button class="menu-toggle" type="button" data-menu-toggle aria-expanded="false" aria-label="Open menu">Menu</button>
+      <nav class="nav-links" data-nav-links>
+        <a href="index.html" data-nav="home">Home</a>
+        <a href="about.html" data-nav="about">About</a>
+        <a href="products.html" data-nav="products">Products</a>
+        <a href="services.html" data-nav="services">Services</a>
+        <a href="downloads.html" data-nav="downloads">Downloads</a>
+        <a href="contact.html" data-nav="contact">Contact</a>
+        <button class="theme-toggle" type="button" data-theme-cycle>Theme: <span data-theme-label>System</span></button>
+        <a class="nav-cta" href="downloads.html">Download</a>
+      </nav>
+    </div>
+  </header>
+  <main id="main" class="section">
+    <div class="container">
+      <p class="kicker">Download center</p>
+      <h1>Download Maurya Software</h1>
+      <p class="lead">Installers are produced by GitHub Actions when you push a version tag. This page never ships fake .exe, .dmg, or Linux packages.</p>
+      <div class="notice" data-download-banner></div>
+
+      <div class="grid-3" style="margin-top:24px">
+        <article class="download-card panel">
+          <h2>Maurya Desktop for Windows</h2>
+          <p class="muted">Expected asset: Maurya-Desktop-Setup.exe</p>
+          <div class="download-actions">
+            <a class="btn btn-primary" data-download="windows" href="#download-config">Download for Windows</a>
+          </div>
+        </article>
+        <article class="download-card panel">
+          <h2>Maurya Desktop for Linux</h2>
+          <p class="muted">Expected assets: AppImage, DEB, RPM</p>
+          <div class="download-actions">
+            <a class="btn btn-primary" data-download="appimage" href="#download-config">Download AppImage</a>
+            <a class="btn" data-download="deb" href="#download-config">Download DEB</a>
+            <a class="btn" data-download="rpm" href="#download-config">Download RPM</a>
+          </div>
+        </article>
+        <article class="download-card panel">
+          <h2>Maurya Desktop for macOS</h2>
+          <p class="muted">Expected asset: Maurya-Desktop.dmg</p>
+          <div class="download-actions">
+            <a class="btn btn-primary" data-download="dmg" href="#download-config">Download for macOS</a>
+          </div>
+        </article>
+      </div>
+
+      <div class="grid-2" style="margin-top:24px">
+        <article class="card">
+          <h2>Release details</h2>
+          <p><strong>Latest version:</strong> <span data-app-version>1.0.0</span></p>
+          <p><strong>Release date:</strong> set by the GitHub Release when you tag v1.0.0</p>
+          <p><strong>Source code:</strong> <a data-github-source href="#download-config">GitHub repository</a></p>
+          <p><strong>GitHub:</strong> <a data-github-releases href="#download-config">Releases</a></p>
+        </article>
+        <article class="card">
+          <h2>System requirements</h2>
+          <ul>
+            <li>Windows 10 or later</li>
+            <li>Linux x64 with glibc compatible with Electron 33</li>
+            <li>macOS 11 or later</li>
+            <li>About 300 MB disk space after install</li>
+          </ul>
+        </article>
+      </div>
+
+      <article class="card" style="margin-top:24px" id="download-config">
+        <h2>Release notes</h2>
+        <p class="muted">v1.0.0 introduces Maurya Desktop, the company website, GitHub Pages deployment, and cross-platform installer builds. Unsigned macOS builds are expected unless Apple credentials are added later.</p>
+        <p class="help">Configuration variable: <code>GITHUB_REPOSITORY</code> = <strong data-repo-value></strong></p>
+        <p class="help">If a download 404s, the release asset is missing. Create tag v1.0.0 after pushing this repository so Actions can attach installers.</p>
+      </article>
+    </div>
+  </main>
+  <footer class="footer">
+    <div class="container legal">
+      <span>&copy; <span data-year></span> Maurya Software Technologies</span>
+      <a href="privacy.html">Privacy</a>
+    </div>
+  </footer>
+  <script src="assets/app.js"></script>
+</body>
+</html>

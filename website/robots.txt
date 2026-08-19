@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://dm2123.github.io/maurya-software-technologies/sitemap.xml

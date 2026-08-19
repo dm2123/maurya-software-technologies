@@ -1,0 +1,112 @@
+name: Build releases
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            name: windows
+          - os: ubuntu-latest
+            name: linux
+          - os: macos-latest
+            name: macos
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: desktop
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+
+      - name: Install Linux build packages
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y rpm fakeroot dpkg squashfs-tools libfuse2
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build installers
+        run: npm run make
+
+      - name: Collect Windows assets
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path ../release-assets | Out-Null
+          $setup = Get-ChildItem -Recurse out/make -Filter "Maurya-Desktop-Setup.exe" | Select-Object -First 1
+          if (-not $setup) { $setup = Get-ChildItem -Recurse out/make -Filter "*.exe" | Select-Object -First 1 }
+          if ($setup) { Copy-Item $setup.FullName ../release-assets/Maurya-Desktop-Setup.exe }
+          Get-ChildItem -Recurse out/make -Filter "*.nupkg" | ForEach-Object { Copy-Item $_.FullName ../release-assets/ }
+
+      - name: Collect Linux assets
+        if: runner.os == 'Linux'
+        run: |
+          mkdir -p ../release-assets
+          find out/make -type f \( -name "*.AppImage" -o -name "*.deb" -o -name "*.rpm" -o -name "*.zip" \) -exec cp {} ../release-assets/ \;
+          appimage=$(find ../release-assets -maxdepth 1 -name "*.AppImage" | head -n 1)
+          if [ -n "$appimage" ]; then cp "$appimage" ../release-assets/Maurya-Desktop.AppImage; fi
+          deb=$(find ../release-assets -maxdepth 1 -name "*.deb" | head -n 1)
+          if [ -n "$deb" ]; then cp "$deb" ../release-assets/Maurya-Desktop.deb; fi
+          rpmfile=$(find ../release-assets -maxdepth 1 -name "*.rpm" | head -n 1)
+          if [ -n "$rpmfile" ]; then cp "$rpmfile" ../release-assets/Maurya-Desktop.rpm; fi
+
+      - name: Collect macOS assets
+        if: runner.os == 'macOS'
+        run: |
+          mkdir -p ../release-assets
+          find out/make -type f \( -name "*.dmg" -o -name "*.zip" \) -exec cp {} ../release-assets/ \;
+          if ls ../release-assets/*.dmg >/dev/null 2>&1; then
+            dmg=$(ls ../release-assets/*.dmg | head -n 1)
+            cp "$dmg" ../release-assets/Maurya-Desktop.dmg
+          fi
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: maurya-desktop-${{ matrix.name }}
+          path: release-assets
+          if-no-files-found: error
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Flatten assets
+        run: |
+          mkdir -p dist
+          find artifacts -type f -exec cp {} dist/ \;
+          ls -la dist
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: false
+          generate_release_notes: true
+          files: dist/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
