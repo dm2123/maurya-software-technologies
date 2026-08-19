@@ -4,76 +4,477 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; connect-src 'self'; base-uri 'self';">
-  <title>Maurya Desktop</title>
+  <title>Maurya Automation Suite</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <aside class="sidebar">
-    <div class="brand">
-      <img src="../assets/icon.svg" alt="Maurya Desktop">
-      <div><strong>Maurya</strong><span>DESKTOP / v1.0.1</span></div>
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon" aria-hidden="true">
+        <svg viewBox="0 0 32 32" fill="none"><path d="M6 10h20M6 16h20M6 22h14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><circle cx="26" cy="22" r="4" stroke="currentColor" stroke-width="2.5"/></svg>
+      </div>
+      <div class="brand-text">
+        <strong>Maurya</strong>
+        <span>AUTOMATION SUITE</span>
+      </div>
     </div>
-    <p class="nav-label">Workspace</p>
-    <button class="nav-btn active" data-view="dashboard" type="button"><span>01</span> Overview</button>
-    <button class="nav-btn" data-view="products" type="button"><span>02</span> Products</button>
-    <button class="nav-btn" data-view="automation" type="button"><span>03</span> Automation</button>
-    <button class="nav-btn" data-view="downloads" type="button"><span>04</span> Downloads</button>
-    <p class="nav-label nav-label-bottom">System</p>
-    <button class="nav-btn" data-view="settings" type="button"><span>05</span> Preferences</button>
-    <button class="nav-btn" data-view="about" type="button"><span>06</span> Contact</button>
-    <div class="sidebar-footer"><i></i><span>System online</span></div>
+    <nav class="sidebar-nav" role="navigation" aria-label="Main navigation">
+      <button class="nav-item active" data-view="canvas" type="button">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"></rect><path d="M9 12h6M12 9v6"></path></svg>
+        <span>Canvas</span>
+        <kbd class="nav-shortcut">1</kbd>
+      </button>
+      <button class="nav-item" data-view="library" type="button">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-5"></path><polyline points="17 3 22 3 22 8"></polyline></svg>
+        <span>Actions</span>
+        <kbd class="nav-shortcut">2</kbd>
+      </button>
+      <button class="nav-item" data-view="runs" type="button">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+        <span>Runs</span>
+        <kbd class="nav-shortcut">3</kbd>
+        <span class="run-badge" id="run-badge" hidden>0</span>
+      </button>
+      <button class="nav-item" data-view="settings" type="button">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+        <span>Settings</span>
+        <kbd class="nav-shortcut">4</kbd>
+      </button>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-info">
+        <div class="user-avatar">DM</div>
+        <div class="user-detail"><strong>Dinesh Maurya</strong><small>Founder</small></div>
+      </div>
+      <button class="theme-toggle-btn" id="theme-toggle" type="button" aria-label="Toggle theme">
+        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+      </button>
+    </div>
   </aside>
 
-  <main>
-    <section class="view active" id="view-dashboard">
-      <header class="topline"><div><p class="eyebrow">MAURYA SOFTWARE TECHNOLOGIES</p><h1>Build space</h1></div><span class="online-badge"><i></i> RUNNING</span></header>
-      <div class="command-deck">
-        <div class="deck-copy"><span class="micro-label">READY TO CREATE</span><h2>Turn an idea into<br>a working system.</h2><p>Software, automation and platform work with a clear path from brief to release.</p><button class="deck-action" type="button" data-view-target="about">Contact Dinesh <b aria-hidden="true">-></b></button></div>
-        <div class="desktop-orbit" aria-hidden="true"><div class="orbit-line orbit-a"></div><div class="orbit-line orbit-b"></div><div class="desktop-core">M</div><div class="orbit-node node-a"></div><div class="orbit-node node-b"></div><div class="orbit-tag">AUTOMATE<br><small>CONNECT WORK</small></div></div>
+  <div class="main-wrapper">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="sidebar-toggle" id="sidebar-toggle" type="button" aria-label="Toggle sidebar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+        </button>
+        <div class="breadcrumb">
+          <span class="crumb" data-view="canvas">Canvas</span>
+          <span class="crumb-sep">/</span>
+          <span class="crumb active" id="current-workflow">Untitled Workflow</span>
+        </div>
       </div>
-      <div class="metric-grid">
-        <article class="metric-card"><span>PLATFORM</span><strong id="card-platform">Loading</strong><small>Current operating system</small></article>
-        <article class="metric-card"><span>ARCHITECTURE</span><strong id="card-arch">Loading</strong><small>Runtime environment</small></article>
-        <article class="metric-card"><span>BUILD</span><strong id="build-label">Loading</strong><small>Application channel</small></article>
-        <article class="metric-card metric-status"><span>STATUS</span><strong id="card-status">Loading</strong><small>Application state</small></article>
+      <div class="topbar-center">
+        <div class="workflow-status" id="workflow-status">
+          <span class="status-indicator"></span>
+          <span class="status-text">Draft</span>
+        </div>
       </div>
-      <div class="lower-grid">
-        <article class="system-panel"><div class="panel-head"><div><span class="micro-label">SYSTEM SNAPSHOT</span><h2>Local runtime</h2></div><span id="os-label" class="chip">Detecting</span></div><p id="sys-error" class="error" hidden>System information is unavailable. Restart the application.</p><dl><div><dt>Operating system</dt><dd id="info-os">—</dd></div><div><dt>Application version</dt><dd id="info-app">1.0.1</dd></div><div><dt>Electron</dt><dd id="info-electron">—</dd></div><div><dt>Node</dt><dd id="info-node">—</dd></div></dl></article>
-        <article class="next-panel"><span class="micro-label">NEXT ACTION</span><h2>Plan your first automation.</h2><p>Share your repeated task and create a practical workflow around it.</p><button class="dark-action" type="button" data-view-target="automation">Open automation <b aria-hidden="true">-></b></button></article>
+      <div class="topbar-right">
+        <button class="btn btn-ghost" id="btn-undo" type="button" title="Undo (Ctrl+Z)" disabled>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7v6h6"></path><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"></path></svg>
+        </button>
+        <button class="btn btn-ghost" id="btn-redo" type="button" title="Redo (Ctrl+Shift+Z)" disabled>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 7v6h-6"></path><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7"></path></svg>
+        </button>
+        <div class="divider"></div>
+        <button class="btn btn-primary" id="btn-run" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+          <span>Run</span>
+        </button>
+        <button class="btn btn-primary btn-filled" id="btn-deploy" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="23 12 1 12"></polyline></svg>
+          <span>Deploy</span>
+        </button>
       </div>
-    </section>
+    </header>
 
-    <section class="view" id="view-products">
-      <header class="topline"><div><p class="eyebrow">PRODUCT ECOSYSTEM</p><h1>Built for useful work</h1></div></header>
-      <div class="product-grid">
-        <article class="product-card featured"><span>01 / DESKTOP</span><div class="product-mark">M</div><h2>Maurya Desktop</h2><p>A focused workspace for system status, platform information and direct collaboration.</p></article>
-        <article class="product-card"><span>02 / WEB</span><div class="product-mark">W</div><h2>Web Platforms</h2><p>Responsive web products for services, customer journeys and operational clarity.</p></article>
-        <article class="product-card"><span>03 / AUTOMATION</span><div class="product-mark">A</div><h2>Connected Workflows</h2><p>Integrations that remove repetitive handoffs without removing human decisions.</p></article>
+    <main class="main-content" id="main-content">
+      <section class="view-panel active" id="view-canvas" role="main" aria-label="Workflow Canvas">
+        <div class="canvas-wrapper">
+          <div class="canvas-toolbar">
+            <div class="toolbar-group">
+              <button class="tool-btn active" data-tool="select" type="button" title="Select (V)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3l18 18"></path><path d="M12.5 3H19a2 2 0 0 1 2 2v4.5"></path><path d="M11.5 21H5a2 2 0 0 1-2-2v-4.5"></path></svg>
+              </button>
+              <button class="tool-btn" data-tool="pan" type="button" title="Pan (H)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 11V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2v0"></path><path d="M14 10V4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v10"></path><path d="M10 10.5V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2v8"></path><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"></path></svg>
+              </button>
+            </div>
+            <div class="toolbar-divider"></div>
+            <div class="toolbar-group">
+              <span class="zoom-display" id="zoom-display">100%</span>
+              <button class="tool-btn" id="zoom-out" type="button" title="Zoom out (-)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
+              </button>
+              <button class="tool-btn" id="zoom-in" type="button" title="Zoom in (+)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="11" y1="8" x2="11" y2="14"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
+              </button>
+              <button class="tool-btn" id="zoom-fit" type="button" title="Fit to view (0)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"></rect></svg>
+              </button>
+            </div>
+            <div class="toolbar-divider"></div>
+            <div class="toolbar-group">
+              <button class="tool-btn" id="btn-save" type="button" title="Save workflow (Ctrl+S)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+              </button>
+              <button class="tool-btn" id="btn-new" type="button" title="New workflow (Ctrl+N)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="canvas-area" id="canvas-area">
+            <div class="canvas-grid" id="canvas-grid"></div>
+            <svg class="canvas-connections" id="canvas-connections"></svg>
+            <div class="canvas-nodes" id="canvas-nodes"></div>
+            <div class="canvas-minimap" id="canvas-minimap">
+              <div class="minimap-viewport" id="minimap-viewport"></div>
+            </div>
+            <div class="empty-canvas" id="empty-canvas">
+              <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"></rect><path d="M9 12h6M12 9v6"></path></svg>
+              <h3>Start building your automation</h3>
+              <p>Drag actions from the library (shortcut <kbd>2</kbd>) or right-click to add nodes</p>
+              <button class="btn btn-primary" id="add-first-node" type="button">Add First Node</button>
+            </div>
+          </div>
+
+          <div class="canvas-statusbar">
+            <div class="status-left">
+              <span id="node-count">0 nodes</span>
+              <span class="sep">|</span>
+              <span id="connection-count">0 connections</span>
+              <span class="sep">|</span>
+              <span id="last-saved">Not saved</span>
+            </div>
+            <div class="status-right">
+              <span class="grid-snap" id="grid-snap">Snap: On</span>
+              <span class="sep">|</span>
+              <span id="mouse-pos">0, 0</span>
+            </div>
+          </div>
+        </div>
+
+        <aside class="panel-right" id="panel-right" aria-label="Node properties">
+          <div class="panel-tabs">
+            <button class="panel-tab active" data-panel="properties" type="button">Properties</button>
+            <button class="panel-tab" data-panel="logs" type="button">Logs</button>
+            <button class="panel-tab" data-panel="debug" type="button">Debug</button>
+          </div>
+          <div class="panel-content">
+            <div class="panel-pane active" id="pane-properties">
+              <div class="empty-state">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                <p>Select a node to edit its properties</p>
+              </div>
+              <form class="node-form" id="node-form" hidden>
+                <input type="hidden" id="node-id">
+                <div class="form-group">
+                  <label>Node Type</label>
+                  <select id="node-type" disabled>
+                    <option value="trigger">Trigger</option>
+                    <option value="action">Action</option>
+                    <option value="condition">Condition</option>
+                    <option value="transform">Transform</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>Node Name</label>
+                  <input type="text" id="node-name" placeholder="Enter node name">
+                </div>
+                <div class="form-group">
+                  <label>Description</label>
+                  <textarea id="node-desc" rows="2" placeholder="What does this node do?"></textarea>
+                </div>
+                <fieldset class="form-group">
+                  <legend>Configuration</legend>
+                  <div id="node-config"></div>
+                </fieldset>
+                <div class="form-actions">
+                  <button class="btn btn-primary" type="button" id="save-node">Save Changes</button>
+                  <button class="btn btn-ghost" type="button" id="delete-node">Delete Node</button>
+                </div>
+              </form>
+            </div>
+            <div class="panel-pane" id="pane-logs">
+              <div class="log-toolbar">
+                <select id="log-filter" aria-label="Filter logs">
+                  <option value="all">All</option>
+                  <option value="info">Info</option>
+                  <option value="success">Success</option>
+                  <option value="error">Error</option>
+                </select>
+                <button class="btn btn-ghost compact" id="clear-logs" type="button">Clear</button>
+              </div>
+              <div class="log-entries" id="log-entries">
+                <div class="log-empty">No runs yet. Click <strong>Run</strong> to execute the workflow.</div>
+              </div>
+            </div>
+            <div class="panel-pane" id="pane-debug">
+              <div class="debug-empty">Run the workflow to see debug information</div>
+              <div class="debug-content" hidden>
+                <h4>Execution Context</h4>
+                <pre id="debug-context" class="debug-pre"></pre>
+                <h4>Node Outputs</h4>
+                <div id="debug-outputs"></div>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </section>
+
+      <section class="view-panel" id="view-library" role="main" aria-label="Action Library">
+        <div class="library-header">
+          <h2>Action Library</h2>
+          <div class="library-search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <input type="search" id="library-search" placeholder="Search actions…" aria-label="Search actions">
+          </div>
+        </div>
+        <div class="library-categories" id="library-categories">
+          <button class="category-btn active" data-category="all" type="button">All</button>
+          <button class="category-btn" data-category="trigger" type="button">Triggers</button>
+          <button class="category-btn" data-category="http" type="button">HTTP</button>
+          <button class="category-btn" data-category="data" type="button">Data</button>
+          <button class="category-btn" data-category="notify" type="button">Notify</button>
+          <button class="category-btn" data-category="file" type="button">Files</button>
+          <button class="category-btn" data-category="logic" type="button">Logic</button>
+          <button class="category-btn" data-category="custom" type="button">Custom</button>
+        </div>
+        <div class="library-grid" id="library-grid"></div>
+      </section>
+
+      <section class="view-panel" id="view-runs" role="main" aria-label="Execution History">
+        <div class="runs-header">
+          <h2>Execution History</h2>
+          <div class="runs-filters">
+            <select id="runs-filter-status" aria-label="Filter by status">
+              <option value="all">All statuses</option>
+              <option value="running">Running</option>
+              <option value="success">Success</option>
+              <option value="failed">Failed</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+            <select id="runs-filter-workflow" aria-label="Filter by workflow">
+              <option value="all">All workflows</option>
+            </select>
+          </div>
+        </div>
+        <div class="runs-table-container">
+          <table class="runs-table" id="runs-table">
+            <thead>
+              <tr>
+                <th>Workflow</th>
+                <th>Status</th>
+                <th>Started</th>
+                <th>Duration</th>
+                <th>Nodes</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="runs-body">
+              <tr class="runs-empty">
+                <td colspan="6">No executions yet. Create a workflow and click <strong>Run</strong>.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="run-detail" id="run-detail" hidden>
+          <div class="run-detail-header">
+            <button class="btn btn-ghost" id="close-run-detail" type="button">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+            <h3 id="run-detail-title">Run Details</h3>
+          </div>
+          <div class="run-detail-content" id="run-detail-content"></div>
+        </div>
+      </section>
+
+      <section class="view-panel" id="view-settings" role="main" aria-label="Settings">
+        <div class="settings-container">
+          <nav class="settings-nav">
+            <button class="setting-nav-item active" data-setting="general" type="button">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"></rect><path d="M8 21h8"></path><path d="M12 17v4"></path></svg>
+              General
+            </button>
+            <button class="setting-nav-item" data-setting="theme" type="button">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+              Appearance
+            </button>
+            <button class="setting-nav-item" data-setting="shortcuts" type="button">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"></rect><path d="M6 8h12M6 12h12M6 16h10"></path></svg>
+              Shortcuts
+            </button>
+            <button class="setting-nav-item" data-setting="advanced" type="button">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"></polyline><polyline points="20 17 14 11 20 5"></polyline></svg>
+              Advanced
+            </button>
+            <button class="setting-nav-item" data-setting="about" type="button">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+              About
+            </button>
+          </nav>
+          <div class="settings-content">
+            <div class="setting-pane active" id="setting-general">
+              <h3>General</h3>
+              <div class="setting-group">
+                <label class="setting-item">
+                  <span><strong>Auto-save</strong><small>Automatically save workflow changes</small></span>
+                  <input type="checkbox" id="setting-autosave" checked>
+                </label>
+                <label class="setting-item">
+                  <span><strong>Confirm before run</strong><small>Show confirmation dialog before executing</small></span>
+                  <input type="checkbox" id="setting-confirm-run">
+                </label>
+                <label class="setting-item">
+                  <span><strong>Show minimap</strong><small>Display canvas minimap</small></span>
+                  <input type="checkbox" id="setting-minimap" checked>
+                </label>
+                <label class="setting-item">
+                  <span><strong>Grid snap</strong><small>Snap nodes to grid when dragging</small></span>
+                  <input type="checkbox" id="setting-gridsnap" checked>
+                </label>
+              </div>
+              <div class="setting-group">
+                <h4>Default Workflow</h4>
+                <label class="setting-item">
+                  <span><strong>New workflow template</strong><small>Starting point for new workflows</small></span>
+                  <select id="setting-template">
+                    <option value="blank">Blank canvas</option>
+                    <option value="http">HTTP request flow</option>
+                    <option value="file">File processing</option>
+                    <option value="notify">Notification pipeline</option>
+                  </select>
+                </label>
+              </div>
+            </div>
+            <div class="setting-pane" id="setting-theme">
+              <h3>Appearance</h3>
+              <div class="setting-group">
+                <label class="setting-item">
+                  <span><strong>Theme</strong></span>
+                  <div class="theme-options">
+                    <label class="theme-option" data-theme="system"><input type="radio" name="theme" value="system" checked><span>System</span></label>
+                    <label class="theme-option" data-theme="dark"><input type="radio" name="theme" value="dark"><span>Dark</span></label>
+                    <label class="theme-option" data-theme="light"><input type="radio" name="theme" value="light"><span>Light</span></label>
+                  </div>
+                </label>
+              </div>
+              <div class="setting-group">
+                <label class="setting-item">
+                  <span><strong>Accent Color</strong></span>
+                  <div class="accent-options" id="accent-options"></div>
+                </label>
+              </div>
+              <div class="setting-group">
+                <label class="setting-item">
+                  <span><strong>Reduce Motion</strong><small>Disable animations and transitions</small></span>
+                  <input type="checkbox" id="setting-reduce-motion">
+                </label>
+                <label class="setting-item">
+                  <span><strong>Compact Mode</strong><small>Smaller spacing and fonts</small></span>
+                  <input type="checkbox" id="setting-compact">
+                </label>
+              </div>
+            </div>
+            <div class="setting-pane" id="setting-shortcuts">
+              <h3>Keyboard Shortcuts</h3>
+              <table class="shortcuts-table">
+                <thead><tr><th>Action</th><th>Shortcut</th></tr></thead>
+                <tbody id="shortcuts-body"></tbody>
+              </table>
+            </div>
+            <div class="setting-pane" id="setting-advanced">
+              <h3>Advanced</h3>
+              <div class="setting-group">
+                <label class="setting-item">
+                  <span><strong>Enable DevTools</strong><small>Open Chromium DevTools (requires restart)</small></span>
+                  <input type="checkbox" id="setting-devtools">
+                </label>
+                <label class="setting-item">
+                  <span><strong>Debug Mode</strong><small>Verbose logging and execution tracing</small></span>
+                  <input type="checkbox" id="setting-debug">
+                </label>
+                <label class="setting-item">
+                  <span><strong>Telemetry</strong><small>Send anonymous usage data</small></span>
+                  <input type="checkbox" id="setting-telemetry">
+                </label>
+              </div>
+              <div class="setting-group danger-zone">
+                <h4>Danger Zone</h4>
+                <button class="btn btn-ghost danger" id="reset-all-data" type="button">Reset All Data</button>
+                <button class="btn btn-ghost danger" id="clear-cache" type="button">Clear Cache</button>
+              </div>
+            </div>
+            <div class="setting-pane" id="setting-about">
+              <h3>About</h3>
+              <div class="about-card">
+                <div class="about-icon">M</div>
+                <h4>Maurya Automation Suite</h4>
+                <p class="version">Version <span data-app-version>1.0.2</span></p>
+                <p class="muted">Built with Electron, Node.js, and vanilla JavaScript</p>
+                <div class="about-links">
+                  <a href="https://github.com/dm2123/maurya-software-technologies" target="_blank" rel="noreferrer">GitHub Repository</a>
+                  <a href="mailto:dm7178072@gmail.com">Report Issue</a>
+                  <a data-whatsapp-project href="https://wa.me/917808658872">Contact Founder</a>
+                </div>
+                <div class="about-credits">
+                  <h5>Open Source Libraries</h5>
+                  <ul>
+                    <li>Electron 33</li>
+                    <li>Node.js 20 LTS</li>
+                    <li>No external UI frameworks</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="modal-overlay" id="modal-overlay" hidden>
+    <div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div class="modal-header">
+        <h3 id="modal-title">Dialog</h3>
+        <button class="modal-close" id="modal-close" type="button" aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
       </div>
-    </section>
+      <div class="modal-body" id="modal-body"></div>
+      <div class="modal-footer" id="modal-footer"></div>
+    </div>
+  </div>
 
-    <section class="view" id="view-automation">
-      <header class="topline"><div><p class="eyebrow">AUTOMATION BLUEPRINT</p><h1>Make repeated work flow</h1></div></header>
-      <div class="automation-board"><div class="board-head"><span>FLOW / 01</span><strong>Inquiry to action</strong></div><div class="board-track"></div><article class="automation-step trigger"><b>01</b><h2>Trigger</h2><p>New inquiry arrives</p></article><article class="automation-step route"><b>02</b><h2>Route</h2><p>Notify the right channel</p></article><article class="automation-step action"><b>03</b><h2>Action</h2><p>Assign a next step</p></article></div>
-      <article class="contact-strip"><div><span class="micro-label">START WITH A CONVERSATION</span><h2>Tell Dinesh what you repeat every day.</h2></div><a class="light-action" href="mailto:dm7178072@gmail.com?subject=Automation%20project%20inquiry">Email project brief <b aria-hidden="true">-></b></a></article>
-    </section>
+  <div class="context-menu" id="context-menu" hidden role="menu">
+    <div class="context-menu-item" data-action="add-trigger" role="menuitem">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+      <span>Add Trigger</span>
+    </div>
+    <div class="context-menu-item" data-action="add-action" role="menuitem">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="3" width="7" height="7" rx="1"></rect><rect x="3" y="14" width="7" height="7" rx="1"></rect><rect x="14" y="14" width="7" height="7" rx="1"></rect></svg>
+      <span>Add Action</span>
+    </div>
+    <div class="context-menu-item" data-action="add-condition" role="menuitem">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"></path><path d="M2 17l10 5 10-5"></path></svg>
+      <span>Add Condition</span>
+    </div>
+    <div class="context-menu-divider"></div>
+    <div class="context-menu-item" data-action="paste" role="menuitem">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+      <span>Paste</span>
+      <kbd>Ctrl+V</kbd>
+    </div>
+    <div class="context-menu-divider"></div>
+    <div class="context-menu-item" data-action="select-all" role="menuitem"><span>Select All</span><kbd>Ctrl+A</kbd></div>
+    <div class="context-menu-item" data-action="delete-selected" role="menuitem" class="danger"><span>Delete</span><kbd>Del</kbd></div>
+  </div>
 
-    <section class="view" id="view-downloads">
-      <header class="topline"><div><p class="eyebrow">RELEASE CENTER</p><h1>Download Maurya Desktop</h1></div></header>
-      <p class="intro">Installers are attached to GitHub Releases after a successful cross-platform build. This application never includes fake installer files.</p>
-      <div class="download-grid"><article><span>WINDOWS</span><h2>Maurya-Desktop-Setup.exe</h2><a href="https://github.com/dm2123/maurya-software-technologies/releases">Open releases -></a></article><article><span>LINUX</span><h2>AppImage · DEB · RPM</h2><a href="https://github.com/dm2123/maurya-software-technologies/releases">Open releases -></a></article><article><span>MACOS</span><h2>Maurya-Desktop.dmg</h2><a href="https://github.com/dm2123/maurya-software-technologies/releases">Open releases -></a></article></div>
-    </section>
+  <div class="toast-container" id="toast-container" aria-live="polite"></div>
 
-    <section class="view" id="view-settings">
-      <header class="topline"><div><p class="eyebrow">PREFERENCES</p><h1>Make this space yours</h1></div></header>
-      <article class="setting-card"><div><span class="micro-label">APPEARANCE</span><h2>Theme mode</h2><p>Saved locally on this device.</p></div><select id="theme-select" aria-label="Theme mode"><option value="system">System mode</option><option value="dark">Dark mode</option><option value="light">Light mode</option></select></article>
-    </section>
-
-    <section class="view" id="view-about">
-      <header class="topline"><div><p class="eyebrow">DIRECT COLLABORATION</p><h1>Contact Dinesh</h1></div></header>
-      <div class="contact-grid"><article class="contact-card contact-feature"><span class="micro-label">MAURYA SOFTWARE TECHNOLOGIES</span><h2>Start with a clear conversation.</h2><p>Software, desktop applications, web platforms, APIs and practical automation.</p></article><a class="contact-card" href="mailto:dm7178072@gmail.com"><span>EMAIL</span><strong>dm7178072@gmail.com</strong><b aria-hidden="true">-></b></a><a class="contact-card" href="https://wa.me/917808658872?text=Hello%20Dinesh%2C%20I%20want%20to%20discuss%20a%20software%20or%20automation%20project."><span>WHATSAPP / PHONE</span><strong>+91 78086 58872</strong><b aria-hidden="true">-></b></a><a class="contact-card" href="https://instagram.com/mr_dinesh_hacker"><span>INSTAGRAM</span><strong>@mr_dinesh_hacker</strong><b aria-hidden="true">-></b></a><a class="contact-card" href="https://github.com/dm2123"><span>GITHUB</span><strong>dm2123</strong><b aria-hidden="true">-></b></a></div>
-    </section>
-  </main>
   <script src="app.js"></script>
 </body>
 </html>

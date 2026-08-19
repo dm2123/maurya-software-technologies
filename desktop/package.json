@@ -1,8 +1,8 @@
 {
-  "name": "maurya-desktop",
-  "productName": "Maurya Desktop",
-  "version": "1.0.1",
-  "description": "Cross-platform desktop software from Maurya Software Technologies.",
+  "name": "maurya-automation-suite",
+  "productName": "Maurya Automation Suite",
+  "version": "1.0.2",
+  "description": "Cross-platform visual automation engine from Maurya Software Technologies.",
   "main": "src/main.js",
   "author": {
     "name": "Dinesh Maurya",

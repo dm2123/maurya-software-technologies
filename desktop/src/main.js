@@ -13,7 +13,7 @@ function createWindow() {
     height: 760,
     minWidth: 860,
     minHeight: 560,
-    title: "Maurya Desktop",
+    title: "Maurya Automation Suite",
     backgroundColor: "#05070f",
     show: false,
     webPreferences: {
