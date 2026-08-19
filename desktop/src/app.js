@@ -44,6 +44,7 @@
       this.initShortcuts();
       this.initSecrets();
       this.initScheduler();
+      this.initMqttBridge();
       this.loadWorkflow();
       this.updateUI();
     },
@@ -321,15 +322,15 @@
       }
     },
 
-    addNode(type, x, y) {
+    addNode(type, x, y, preset) {
       const id = `node_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
       const node = {
         id,
         type,
-        name: this.getDefaultName(type),
+        name: (preset && preset.name) || this.getDefaultName(type),
         x: x || 200,
         y: y || 200,
-        config: {},
+        config: (preset && preset.config) || {},
         status: "idle",
       };
       this.state.nodes.set(id, node);
@@ -339,6 +340,22 @@
       this.updateUI();
       this.saveWorkflowState();
       return node;
+    },
+
+    presetForAction(name) {
+      const map = {
+        "PDF Generate": { config: { actionType: "PDF Generate" } },
+        "PDF Extract": { config: { actionType: "PDF Extract" } },
+        OCR: { config: { actionType: "OCR" } },
+        "Database Query": { config: { actionType: "Database" } },
+        "MQTT Trigger": { config: { triggerType: "MQTT" } },
+        "Schedule Trigger": { config: { triggerType: "Schedule" } },
+        "Webhook Trigger": { config: { triggerType: "Webhook" } },
+        "File Watch": { config: { triggerType: "File Watch" } },
+      };
+      const p = map[name];
+      if (p) return { name, config: p.config };
+      return { name };
     },
 
     getDefaultName(type) {
@@ -637,7 +654,7 @@
     getRelevantConfigs(type, actionType) {
       if (type === "action") {
         const always = [
-          { key: "actionType", label: "Action Type", type: "select", options: ["HTTP Request", "Send Email", "Run Script", "Write File", "Notify", "AI Query", "Delay"], default: "HTTP Request" },
+          { key: "actionType", label: "Action Type", type: "select", options: ["HTTP Request", "Send Email", "Run Script", "Write File", "Notify", "AI Query", "Delay", "PDF Generate", "PDF Extract", "OCR", "Database"], default: "HTTP Request" },
           { key: "retries", label: "Retries", type: "select", options: ["0", "1", "2", "3", "5"], default: "0" },
           { key: "retryDelay", label: "Retry Delay (ms)", type: "text", default: "1000" },
         ];
@@ -658,6 +675,18 @@
         }
         if (actionType === "Delay") {
           return [...always, ...this.getConfigDefs("action").filter((d) => ["duration"].includes(d.key))];
+        }
+        if (actionType === "PDF Generate") {
+          return [...always, ...this.getConfigDefs("action").filter((d) => ["pdfTitle", "pdfContent", "pdfFooter", "pdfPath"].includes(d.key))];
+        }
+        if (actionType === "PDF Extract") {
+          return [...always, ...this.getConfigDefs("action").filter((d) => ["pdfExtractPath", "pdfExtractSave"].includes(d.key))];
+        }
+        if (actionType === "OCR") {
+          return [...always, ...this.getConfigDefs("action").filter((d) => ["ocrPath", "ocrProvider", "ocrModel", "ocrPrompt", "ocrSave"].includes(d.key))];
+        }
+        if (actionType === "Database") {
+          return [...always, ...this.getConfigDefs("action").filter((d) => ["dbType", "dbPath", "dbQuery", "dbWrite"].includes(d.key))];
         }
         // HTTP Request (default)
         return [...always, ...this.getConfigDefs("action").filter((d) => ["url", "method", "headers", "body"].includes(d.key))];
@@ -681,12 +710,15 @@
     getConfigDefs(type) {
       const defs = {
         trigger: [
-          { key: "triggerType", label: "Trigger Type", type: "select", options: ["Manual", "Webhook", "Schedule", "File Watch"], default: "Manual" },
+          { key: "triggerType", label: "Trigger Type", type: "select", options: ["Manual", "Webhook", "Schedule", "File Watch", "MQTT"], default: "Manual" },
           { key: "schedule", label: "Schedule (cron)", type: "text", default: "0 * * * *" },
           { key: "path", label: "Watch Path", type: "text", default: "." },
+          { key: "broker", label: "MQTT Broker", type: "text", default: "mqtt://broker.emqx.io:1883" },
+          { key: "topic", label: "MQTT Topic", type: "text", default: "maurya/+/events" },
+          { key: "variable", label: "Save message to variable", type: "text", default: "mqttMessage" },
         ],
         action: [
-          { key: "actionType", label: "Action Type", type: "select", options: ["HTTP Request", "Send Email", "Run Script", "Write File", "Notify", "AI Query", "Delay"], default: "HTTP Request" },
+          { key: "actionType", label: "Action Type", type: "select", options: ["HTTP Request", "Send Email", "Run Script", "Write File", "Notify", "AI Query", "Delay", "PDF Generate", "PDF Extract", "OCR", "Database"], default: "HTTP Request" },
           { key: "url", label: "URL / Endpoint", type: "text", default: "https://api.github.com" },
           { key: "method", label: "Method", type: "select", options: ["GET", "POST", "PUT", "DELETE", "PATCH"], default: "GET" },
           { key: "headers", label: "Headers (JSON)", type: "textarea", default: '{\n  "Accept": "application/json"\n}' },
@@ -707,6 +739,21 @@
           { key: "duration", label: "Delay (ms)", type: "text", default: "1000" },
           { key: "retries", label: "Retries", type: "select", options: ["0", "1", "2", "3", "5"], default: "0" },
           { key: "retryDelay", label: "Retry Delay (ms)", type: "text", default: "1000" },
+          { key: "pdfTitle", label: "PDF Title", type: "text", default: "Maurya Document" },
+          { key: "pdfContent", label: "PDF Content", type: "textarea", rows: 6, default: "Generated by Maurya Automation Suite." },
+          { key: "pdfFooter", label: "PDF Footer", type: "text", default: "" },
+          { key: "pdfPath", label: "Output PDF Path", type: "text", default: "./document.pdf" },
+          { key: "pdfExtractPath", label: "Source PDF Path", type: "text", default: "./document.pdf" },
+          { key: "pdfExtractSave", label: "Save Text To (optional)", type: "text", default: "" },
+          { key: "ocrPath", label: "Image Path", type: "text", default: "./scan.png" },
+          { key: "ocrProvider", label: "AI Provider", type: "select", options: ["openai", "anthropic"], default: "openai" },
+          { key: "ocrModel", label: "Vision Model", type: "text", default: "gpt-4o-mini" },
+          { key: "ocrPrompt", label: "OCR Prompt", type: "textarea", rows: 3, default: "Extract all text from this image." },
+          { key: "ocrSave", label: "Save Text To (optional)", type: "text", default: "" },
+          { key: "dbType", label: "Database Type", type: "select", options: ["sqlite", "postgres", "mysql"], default: "sqlite" },
+          { key: "dbPath", label: "SQLite File Path", type: "text", default: "./data.db" },
+          { key: "dbQuery", label: "SQL Query", type: "textarea", rows: 4, default: "SELECT * FROM users LIMIT 10;" },
+          { key: "dbWrite", label: "Write Result To (optional)", type: "text", default: "" },
         ],
         condition: [
           { key: "condition", label: "Condition Expression", type: "textarea", default: "data && data.ok" },
@@ -803,7 +850,7 @@
           e.dataTransfer.setData("text/plain", JSON.stringify(action));
         });
         item.addEventListener("dblclick", () => {
-          this.addNode(action.nodeType || "action", 200, 200);
+          this.addNode(action.nodeType || "action", 200, 200, this.presetForAction(action.name));
         });
         this.el.libraryGrid.appendChild(item);
       });
@@ -818,7 +865,7 @@
           const rect = this.el.canvasArea.getBoundingClientRect();
           const x = (e.clientX - rect.left - this.state.panX) / this.state.zoom - 90;
           const y = (e.clientY - rect.top - this.state.panY) / this.state.zoom - 20;
-          this.addNode(action.nodeType || "action", x, y);
+          this.addNode(action.nodeType || "action", x, y, this.presetForAction(action.name));
         }
       });
     },
@@ -842,7 +889,11 @@
         { name: "Custom Script", category: "custom", nodeType: "custom", icon: this.iconSvg("code"), desc: "Run custom JavaScript" },
         { name: "AI Query", category: "custom", nodeType: "action", icon: this.iconSvg("ai"), desc: "Ask OpenAI/Claude via API key" },
         { name: "Delay", category: "logic", nodeType: "action", icon: this.iconSvg("delay"), desc: "Wait for a duration" },
-        { name: "Database Query", category: "data", nodeType: "action", icon: this.iconSvg("database"), desc: "Query database" },
+        { name: "Database Query", category: "data", nodeType: "action", icon: this.iconSvg("database"), desc: "Query SQLite/Postgres/MySQL" },
+        { name: "PDF Generate", category: "file", nodeType: "action", icon: this.iconSvg("pdf"), desc: "Create a PDF document" },
+        { name: "PDF Extract", category: "file", nodeType: "action", icon: this.iconSvg("pdf"), desc: "Extract text from a PDF" },
+        { name: "OCR", category: "custom", nodeType: "action", icon: this.iconSvg("ocr"), desc: "Read text from an image via AI vision" },
+        { name: "MQTT Trigger", category: "trigger", nodeType: "trigger", icon: this.iconSvg("mqtt"), desc: "Subscribe to an MQTT topic" },
       ];
     },
 
@@ -865,6 +916,9 @@
         code: '<polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline>',
         database: '<ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>',
         ai: '<path d="M12 2a3 3 0 0 1 3 3v1a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"></path><path d="M19 8a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-2a2 2 0 0 1 2-2z"></path><path d="M5 8a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2 2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2z"></path><path d="M12 11v4a3 3 0 0 1-3 3H8a2 2 0 0 1-2-2v-1"></path><path d="M12 11v4a3 3 0 0 0 3 3h1a2 2 0 0 0 2-2v-1"></path>',
+        pdf: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><path d="M9 13h6M9 17h6"></path>',
+        ocr: '<path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"></path><circle cx="12" cy="12" r="3"></circle>',
+        mqtt: '<path d="M5 12a7 7 0 0 1 14 0"></path><path d="M2 12a10 10 0 0 1 20 0"></path><circle cx="12" cy="12" r="2"></circle>',
       };
       return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${paths[type] || paths.code}</svg>`;
     },
@@ -886,6 +940,11 @@
         return;
       }
 
+      if (this.state.mqttArmed) {
+        this.disarmMqttWorkflow();
+        return;
+      }
+
       const run = {
         id: `run_${Date.now()}`,
         workflow: this.el.currentWorkflow.textContent,
@@ -902,9 +961,45 @@
       this.switchPanel("logs");
       this.addLog("info", `Starting workflow: ${run.workflow}`);
 
+      // MQTT-triggered workflows run in watch mode (persistent subscriber)
+      const nodesArr = Array.from(this.state.nodes.values());
+      const mqttTrigger = nodesArr.find(
+        (n) => n.type === "trigger" && String(n.config?.triggerType || "").toLowerCase() === "mqtt"
+      );
+      if (mqttTrigger) {
+        this.armMqttWorkflow(run, mqttTrigger);
+        return;
+      }
+
       // Real execution through IPC bridge
-      const nodes = Array.from(this.state.nodes.values());
-      this.executeWorkflow(nodes, run);
+      this.executeWorkflow(nodesArr, run);
+    },
+
+    async armMqttWorkflow(run, triggerNode) {
+      const workflow = this.serializeWorkflow();
+      this.addLog("info", `Arming MQTT watcher → ${triggerNode.config.broker || "default broker"}, topic "${triggerNode.config.topic || "#"}"`);
+      this.addLog("info", "Workflow will run automatically on each incoming MQTT message. Click Run again to disarm.");
+      this.state.mqttArmed = { id: workflow.id };
+      run.status = "watching";
+      this.updateRunBadge();
+      try {
+        await window.maurya.mqttArm(workflow);
+        this.toast("info", "MQTT watcher armed", "Listening for messages…");
+      } catch (e) {
+        this.addLog("error", `MQTT arm failed: ${e.message}`);
+        run.status = "failed";
+        this.state.mqttArmed = null;
+        this.updateRunBadge();
+      }
+    },
+
+    disarmMqttWorkflow() {
+      if (this.state.mqttArmed) {
+        window.maurya.mqttDisarm(this.state.mqttArmed.id);
+        this.state.mqttArmed = null;
+        this.addLog("info", "MQTT watcher disarmed");
+        this.toast("info", "MQTT watcher disarmed", "");
+      }
     },
 
     async executeWorkflow(nodes, run) {
@@ -1038,6 +1133,45 @@
             this.addLog("info", `Delaying ${ms}ms…`);
             await new Promise((r) => setTimeout(r, ms));
             return { delayed: true, ms };
+          }
+          if (at === "PDF Generate") {
+            return runWithRetry(() =>
+              window.maurya.executeAction("pdf-generate", {
+                title: cfg.pdfTitle,
+                content: this.interpolate(cfg.pdfContent, context),
+                footer: cfg.pdfFooter,
+                path: cfg.pdfPath,
+              })
+            );
+          }
+          if (at === "PDF Extract") {
+            return runWithRetry(() =>
+              window.maurya.executeAction("pdf-extract", {
+                path: cfg.pdfExtractPath,
+                saveTo: cfg.pdfExtractSave || undefined,
+              })
+            );
+          }
+          if (at === "OCR") {
+            return runWithRetry(() =>
+              window.maurya.executeAction("ocr", {
+                provider: cfg.ocrProvider || "openai",
+                path: cfg.ocrPath,
+                model: cfg.ocrModel,
+                prompt: cfg.ocrPrompt,
+                saveTo: cfg.ocrSave || undefined,
+              })
+            );
+          }
+          if (at === "Database") {
+            return runWithRetry(() =>
+              window.maurya.executeAction("database", {
+                dbType: cfg.dbType,
+                dbPath: cfg.dbPath,
+                query: cfg.dbQuery,
+                writeTo: cfg.dbWrite || undefined,
+              })
+            );
           }
           throw new Error(`Unknown action type: ${at}`);
         }
@@ -1404,6 +1538,20 @@
       render();
     },
 
+    initMqttBridge() {
+      if (!window.maurya || !window.maurya.onMqttLog) return;
+      window.maurya.onMqttLog((data) => {
+        if (data.lvl) this.addLog(data.lvl, data.msg);
+      });
+      window.maurya.onMqttNode((data) => {
+        const node = this.state.nodes.get(data.nodeId);
+        if (node) {
+          node.status = data.state;
+          this.updateNodeStatus(node);
+        }
+      });
+    },
+
     switchSetting(setting) {
       this.el.settingNavItems.forEach((item) => {
         item.classList.toggle("active", item.dataset.setting === setting);
@@ -1521,6 +1669,19 @@
       localStorage.setItem("maurya-workflow", JSON.stringify(this.state.workflow));
       this.el.lastSaved.textContent = `Saved ${new Date().toLocaleTimeString()}`;
       this.toast("success", "Workflow saved", this.state.workflow.name);
+    },
+
+    serializeWorkflow() {
+      if (!this.state.workflow.id) {
+        this.state.workflow.id = `wf_${Date.now()}`;
+      }
+      return {
+        id: this.state.workflow.id,
+        name: this.el.currentWorkflow.textContent || "Untitled Workflow",
+        nodes: Array.from(this.state.nodes.values()),
+        connections: Array.from(this.state.connections.values()),
+        updatedAt: new Date().toISOString(),
+      };
     },
 
     saveWorkflowState() {

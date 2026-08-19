@@ -1,0 +1,16 @@
+# Generated example outputs
+examples/*.pdf
+examples/*.txt
+examples/query-result.json
+examples/mqtt-log.txt
+
+# Node
+node_modules/
+
+# Electron build artifacts
+out/
+dist/
+
+# Secrets / local state
+secrets.json
+*.db

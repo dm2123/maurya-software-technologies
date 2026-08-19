@@ -34,4 +34,10 @@ contextBridge.exposeInMainWorld("maurya", {
   removeSchedule: (id) => ipcRenderer.invoke("scheduler:remove", id),
   runScheduledNow: (id) => ipcRenderer.invoke("scheduler:runNow", id),
   onScheduleExecute: (cb) => ipcRenderer.on("schedule:execute", (_e, workflow) => cb(workflow)),
+
+  // MQTT watch manager
+  mqttArm: (workflow) => ipcRenderer.invoke("mqtt:arm", workflow),
+  mqttDisarm: (id) => ipcRenderer.invoke("mqtt:disarm", id),
+  onMqttLog: (cb) => ipcRenderer.on("mqtt:log", (_e, data) => cb(data)),
+  onMqttNode: (cb) => ipcRenderer.on("mqtt:node", (_e, data) => cb(data)),
 });

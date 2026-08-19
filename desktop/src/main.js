@@ -1,6 +1,7 @@
 const { app, BrowserWindow, ipcMain, shell, dialog, Tray, Menu, nativeImage } = require("electron");
 const path = require("path");
 const fs = require("fs/promises");
+const fsSync = require("fs");
 const { exec } = require("child_process");
 const util = require("util");
 const nodemailer = require("nodemailer");
@@ -19,14 +20,14 @@ const SCHEDULES_PATH = path.join(USER_DATA, "schedules.json");
 
 let secrets = {};
 try {
-  secrets = JSON.parse(fs.readFileSync(SECRETS_PATH, "utf8"));
+  secrets = JSON.parse(fsSync.readFileSync(SECRETS_PATH, "utf8"));
 } catch (_) {
   secrets = {};
 }
 
 let schedules = [];
 try {
-  schedules = JSON.parse(fs.readFileSync(SCHEDULES_PATH, "utf8"));
+  schedules = JSON.parse(fsSync.readFileSync(SCHEDULES_PATH, "utf8"));
 } catch (_) {
   schedules = [];
 }
@@ -273,9 +274,51 @@ async function handleAction(event, { type, config }) {
       const win = BrowserWindow.fromWebContents(event.sender);
       return { notified: true, title: config.title, message: config.message };
     }
-    default:
-      throw new Error(`Unknown action type: ${type}`);
+    default: {
+      // Delegate PDF / Database / OCR / etc. to the shared engine (keeps GUI + CLI consistent)
+      const { handleAction: engineHandle } = require("../core/engine");
+      return engineHandle(
+        type,
+        config,
+        { vars: {}, lastOutput: null },
+        secrets,
+        (lvl, msg) => console.log(`[action:${type}] ${lvl} ${msg}`)
+      );
+    }
   }
+}
+
+// ── MQTT Watch Manager ──────────────────────────────────────
+const mqttWatchers = {};
+
+async function mqttArm(event, workflow) {
+  const trigger = (workflow.nodes || []).find(
+    (n) => n.type === "trigger" && String(n.config?.triggerType || "").toLowerCase() === "mqtt"
+  );
+  if (!trigger) throw new Error("Workflow has no MQTT trigger");
+  const existing = mqttWatchers[workflow.id];
+  if (existing) existing.stop();
+  const { executeWorkflow } = require("../core/engine");
+  const win = BrowserWindow.fromWebContents(event.sender);
+  const control = await executeWorkflow(workflow, {
+    secrets,
+    onLog: (lvl, msg) => {
+      if (win) win.webContents.send("mqtt:log", { id: workflow.id, lvl, msg });
+    },
+    onNode: (id, state) => {
+      if (win) win.webContents.send("mqtt:node", { id: workflow.id, nodeId: id, state });
+    },
+  });
+  mqttWatchers[workflow.id] = control;
+  return { armed: true };
+}
+
+function mqttDisarm(_event, id) {
+  if (mqttWatchers[id]) {
+    mqttWatchers[id].stop();
+    delete mqttWatchers[id];
+  }
+  return { armed: false };
 }
 
 // ── Scheduler ────────────────────────────────────────────────
@@ -461,6 +504,8 @@ ipcMain.handle("scheduler:add", handleSchedulerAdd);
 ipcMain.handle("scheduler:remove", handleSchedulerRemove);
 ipcMain.handle("scheduler:runNow", handleSchedulerRunNow);
 ipcMain.handle("action:execute", handleAction);
+ipcMain.handle("mqtt:arm", mqttArm);
+ipcMain.handle("mqtt:disarm", mqttDisarm);
 
 app.whenReady().then(() => {
   createWindow();

@@ -1,0 +1,51 @@
+{
+  "name": "PDF + Database Report (v1.0.3)",
+  "description": "Generate a PDF invoice from a SQLite query result, then extract and summarize it.",
+  "nodes": [
+    {
+      "id": "trigger",
+      "type": "trigger",
+      "name": "Manual Trigger",
+      "config": { "triggerType": "Manual" }
+    },
+    {
+      "id": "query",
+      "type": "action",
+      "name": "Query Customers",
+      "config": {
+        "actionType": "Database",
+        "dbType": "sqlite",
+        "dbPath": "./examples/customers.db",
+        "dbQuery": "SELECT id, name, plan FROM customers LIMIT 10;",
+        "dbWrite": "./examples/query-result.json"
+      }
+    },
+    {
+      "id": "report",
+      "type": "action",
+      "name": "Build PDF Report",
+      "config": {
+        "actionType": "PDF Generate",
+        "pdfTitle": "Customer Report",
+        "pdfContent": "Generated {{data}} from Maurya Automation Suite.",
+        "pdfFooter": "Confidential — Maurya Software Technologies",
+        "pdfPath": "./examples/customer-report.pdf"
+      }
+    },
+    {
+      "id": "extract",
+      "type": "action",
+      "name": "Extract Text",
+      "config": {
+        "actionType": "PDF Extract",
+        "pdfExtractPath": "./examples/customer-report.pdf",
+        "pdfExtractSave": "./examples/customer-report.txt"
+      }
+    }
+  ],
+  "connections": [
+    { "id": "c1", "from": "trigger", "to": "query" },
+    { "id": "c2", "from": "query", "to": "report" },
+    { "id": "c3", "from": "report", "to": "extract" }
+  ]
+}

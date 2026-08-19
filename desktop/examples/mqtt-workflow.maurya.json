@@ -1,0 +1,28 @@
+{
+  "name": "MQTT Watcher (v1.0.3)",
+  "description": "Subscribe to an MQTT topic and write each incoming message to a log file. Run with: maurya run mqtt-workflow.maurya.json",
+  "nodes": [
+    {
+      "id": "mqtt",
+      "type": "trigger",
+      "name": "MQTT Trigger",
+      "config": {
+        "triggerType": "MQTT",
+        "broker": "mqtt://broker.emqx.io:1883",
+        "topic": "maurya/+/events",
+        "variable": "mqttMessage"
+      }
+    },
+    {
+      "id": "log",
+      "type": "action",
+      "name": "Save Message",
+      "config": {
+        "actionType": "Write File",
+        "path": "./examples/mqtt-log.txt",
+        "content": "{{data.message}}"
+      }
+    }
+  ],
+  "connections": [{ "id": "c1", "from": "mqtt", "to": "log" }]
+}
