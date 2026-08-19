@@ -35,9 +35,13 @@ contextBridge.exposeInMainWorld("maurya", {
   runScheduledNow: (id) => ipcRenderer.invoke("scheduler:runNow", id),
   onScheduleExecute: (cb) => ipcRenderer.on("schedule:execute", (_e, workflow) => cb(workflow)),
 
-  // MQTT watch manager
-  mqttArm: (workflow) => ipcRenderer.invoke("mqtt:arm", workflow),
-  mqttDisarm: (id) => ipcRenderer.invoke("mqtt:disarm", id),
-  onMqttLog: (cb) => ipcRenderer.on("mqtt:log", (_e, data) => cb(data)),
-  onMqttNode: (cb) => ipcRenderer.on("mqtt:node", (_e, data) => cb(data)),
+  // Watcher manager (MQTT / Webhook / File Watch)
+  watchArm: (workflow) => ipcRenderer.invoke("watcher:arm", workflow),
+  watchDisarm: (id) => ipcRenderer.invoke("watcher:disarm", id),
+  onWatcherLog: (cb) => ipcRenderer.on("watcher:log", (_e, data) => cb(data)),
+  onWatcherNode: (cb) => ipcRenderer.on("watcher:node", (_e, data) => cb(data)),
+
+  // Cloud sync (GitHub Gist)
+  cloudPush: (workflow) => ipcRenderer.invoke("cloud:push", workflow),
+  cloudPull: () => ipcRenderer.invoke("cloud:pull"),
 });

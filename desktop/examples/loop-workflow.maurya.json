@@ -1,0 +1,13 @@
+{
+  "name": "For-Each Loop Example (v1.0.3)",
+  "description": "Loops over an array and writes each item to a file. Run with: maurya run examples/loop-workflow.maurya.json",
+  "nodes": [
+    { "id": "trigger", "type": "trigger", "name": "Manual Trigger", "config": { "triggerType": "Manual" } },
+    { "id": "loop", "type": "loop", "name": "Loop Items", "config": { "items": "[\"alpha\",\"beta\",\"gamma\"]", "variable": "item" } },
+    { "id": "write", "type": "action", "name": "Write Item", "config": { "actionType": "Write File", "path": "./examples/loop-output.txt", "content": "item={{vars.item}}" } }
+  ],
+  "connections": [
+    { "id": "c1", "from": "trigger", "to": "loop" },
+    { "id": "c2", "from": "loop", "to": "write" }
+  ]
+}

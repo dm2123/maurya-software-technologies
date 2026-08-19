@@ -1,0 +1,9 @@
+{
+  "name": "Webhook → Slack Example (v1.0.3)",
+  "description": "Exposes a local webhook and posts each request to Slack. Run with: maurya run examples/webhook-workflow.maurya.json  (needs slack_webhook secret)",
+  "nodes": [
+    { "id": "trigger", "type": "trigger", "name": "Webhook", "config": { "triggerType": "Webhook", "webhookPort": "3030", "webhookPath": "/webhook", "webhookMethod": "POST" } },
+    { "id": "slack", "type": "action", "name": "Post to Slack", "config": { "actionType": "Slack Message", "slackMessage": "Incoming webhook: {{data.body}}" } }
+  ],
+  "connections": [{ "id": "c1", "from": "trigger", "to": "slack" }]
+}

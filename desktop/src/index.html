@@ -29,16 +29,21 @@
         <span>Actions</span>
         <kbd class="nav-shortcut">2</kbd>
       </button>
+      <button class="nav-item" data-view="marketplace" type="button">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a10 10 0 0 1 10 10M12 2v10h10"></path></svg>
+        <span>Marketplace</span>
+        <kbd class="nav-shortcut">3</kbd>
+      </button>
       <button class="nav-item" data-view="runs" type="button">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
         <span>Runs</span>
-        <kbd class="nav-shortcut">3</kbd>
+        <kbd class="nav-shortcut">4</kbd>
         <span class="run-badge" id="run-badge" hidden>0</span>
       </button>
       <button class="nav-item" data-view="settings" type="button">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
         <span>Settings</span>
-        <kbd class="nav-shortcut">4</kbd>
+        <kbd class="nav-shortcut">5</kbd>
       </button>
     </nav>
     <div class="sidebar-footer">
@@ -122,6 +127,12 @@
               </button>
               <button class="tool-btn" id="btn-new" type="button" title="New workflow (Ctrl+N)">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>
+              </button>
+              <button class="tool-btn" id="btn-import" type="button" title="Import workflow JSON">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+              </button>
+              <button class="tool-btn" id="btn-export" type="button" title="Export workflow JSON">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
               </button>
             </div>
           </div>
@@ -246,6 +257,14 @@
         <div class="library-grid" id="library-grid"></div>
       </section>
 
+      <section class="view-panel" id="view-marketplace" role="main" aria-label="Workflow Marketplace">
+        <div class="marketplace-header">
+          <h2>Workflow Marketplace</h2>
+          <p class="muted">Ready-made automation templates. Click <strong>Use template</strong> to load it onto your canvas.</p>
+        </div>
+        <div class="marketplace-grid" id="marketplace-grid"></div>
+      </section>
+
       <section class="view-panel" id="view-runs" role="main" aria-label="Execution History">
         <div class="runs-header">
           <h2>Execution History</h2>
@@ -322,6 +341,10 @@
             <button class="setting-nav-item" data-setting="scheduler" type="button">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><polyline points="12 7 12 12 15 14"></polyline></svg>
               Scheduler
+            </button>
+            <button class="setting-nav-item" data-setting="cloud" type="button">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path></svg>
+              Cloud Sync
             </button>
           </nav>
           <div class="settings-content">
@@ -445,7 +468,7 @@
               <div class="about-card">
                 <div class="about-icon">M</div>
                 <h4>Maurya Automation Suite</h4>
-                <p class="version">Version <span data-app-version>1.0.2</span></p>
+                <p class="version">Version <span data-app-version>1.0.4</span></p>
                 <p class="muted">Built with Electron, Node.js, and vanilla JavaScript</p>
                 <div class="about-links">
                   <a href="https://github.com/dm2123/maurya-software-technologies" target="_blank" rel="noreferrer">GitHub Repository</a>
@@ -461,6 +484,15 @@
                   </ul>
                 </div>
               </div>
+            </div>
+            <div class="setting-pane" id="setting-cloud">
+              <h3>Cloud Sync</h3>
+              <p class="muted">Back up and sync workflows to a private <strong>GitHub Gist</strong>. Set a <code>github_token</code> secret (with <code>gist</code> scope) in Secrets first.</p>
+              <div class="cloud-actions">
+                <button class="btn btn-primary" id="cloud-push" type="button">Push Current Workflow</button>
+                <button class="btn btn-ghost" id="cloud-pull" type="button">Pull Synced Workflows</button>
+              </div>
+              <div class="cloud-list" id="cloud-list"></div>
             </div>
           </div>
         </div>

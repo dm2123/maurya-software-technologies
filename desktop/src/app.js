@@ -44,7 +44,9 @@
       this.initShortcuts();
       this.initSecrets();
       this.initScheduler();
-      this.initMqttBridge();
+      this.initWatcherBridge();
+      this.initMarketplace();
+      this.initCloudSync();
       this.loadWorkflow();
       this.updateUI();
     },
@@ -62,6 +64,12 @@
         btnRedo: document.getElementById("btn-redo"),
         btnSave: document.getElementById("btn-save"),
         btnNew: document.getElementById("btn-new"),
+        btnImport: document.getElementById("btn-import"),
+        btnExport: document.getElementById("btn-export"),
+        marketplaceGrid: document.getElementById("marketplace-grid"),
+        cloudPush: document.getElementById("cloud-push"),
+        cloudPull: document.getElementById("cloud-pull"),
+        cloudList: document.getElementById("cloud-list"),
         viewPanels: document.querySelectorAll(".view-panel"),
         canvasArea: document.getElementById("canvas-area"),
         canvasNodes: document.getElementById("canvas-nodes"),
@@ -140,6 +148,8 @@
       this.el.btnRedo.addEventListener("click", () => this.redo());
       this.el.btnSave.addEventListener("click", () => this.saveWorkflow());
       this.el.btnNew.addEventListener("click", () => this.newWorkflow());
+      this.el.btnImport.addEventListener("click", () => this.importWorkflow());
+      this.el.btnExport.addEventListener("click", () => this.exportWorkflow());
 
       // Canvas interactions
       this.el.canvasArea.addEventListener("mousedown", (e) => this.onCanvasMouseDown(e));
@@ -255,6 +265,7 @@
       const labels = {
         canvas: "Canvas",
         library: "Action Library",
+        marketplace: "Marketplace",
         runs: "Execution History",
         settings: "Settings",
       };
@@ -352,9 +363,14 @@
         "Schedule Trigger": { config: { triggerType: "Schedule" } },
         "Webhook Trigger": { config: { triggerType: "Webhook" } },
         "File Watch": { config: { triggerType: "File Watch" } },
+        "Slack Message": { config: { actionType: "Slack Message" } },
+        "Telegram Bot": { config: { actionType: "Telegram Bot" } },
+        "Set Variable": { nodeType: "setvar", config: {} },
+        "Data Filter": { nodeType: "filter", config: {} },
+        Loop: { nodeType: "loop", config: {} },
       };
       const p = map[name];
-      if (p) return { name, config: p.config };
+      if (p) return { name, nodeType: p.nodeType, config: p.config };
       return { name };
     },
 
@@ -654,7 +670,7 @@
     getRelevantConfigs(type, actionType) {
       if (type === "action") {
         const always = [
-          { key: "actionType", label: "Action Type", type: "select", options: ["HTTP Request", "Send Email", "Run Script", "Write File", "Notify", "AI Query", "Delay", "PDF Generate", "PDF Extract", "OCR", "Database"], default: "HTTP Request" },
+          { key: "actionType", label: "Action Type", type: "select", options: ["HTTP Request", "Send Email", "Run Script", "Write File", "Notify", "AI Query", "Delay", "PDF Generate", "PDF Extract", "OCR", "Database", "Telegram Bot", "Slack Message"], default: "HTTP Request" },
           { key: "retries", label: "Retries", type: "select", options: ["0", "1", "2", "3", "5"], default: "0" },
           { key: "retryDelay", label: "Retry Delay (ms)", type: "text", default: "1000" },
         ];
@@ -688,6 +704,12 @@
         if (actionType === "Database") {
           return [...always, ...this.getConfigDefs("action").filter((d) => ["dbType", "dbPath", "dbQuery", "dbWrite"].includes(d.key))];
         }
+        if (actionType === "Telegram Bot") {
+          return [...always, ...this.getConfigDefs("action").filter((d) => ["telegramChat", "telegramMessage"].includes(d.key))];
+        }
+        if (actionType === "Slack Message") {
+          return [...always, ...this.getConfigDefs("action").filter((d) => ["slackWebhook", "slackMessage", "slackUsername"].includes(d.key))];
+        }
         // HTTP Request (default)
         return [...always, ...this.getConfigDefs("action").filter((d) => ["url", "method", "headers", "body"].includes(d.key))];
       }
@@ -715,10 +737,13 @@
           { key: "path", label: "Watch Path", type: "text", default: "." },
           { key: "broker", label: "MQTT Broker", type: "text", default: "mqtt://broker.emqx.io:1883" },
           { key: "topic", label: "MQTT Topic", type: "text", default: "maurya/+/events" },
-          { key: "variable", label: "Save message to variable", type: "text", default: "mqttMessage" },
+          { key: "variable", label: "Save message to variable", type: "text", default: "triggerData" },
+          { key: "webhookPort", label: "Webhook Port", type: "text", default: "3030" },
+          { key: "webhookPath", label: "Webhook Path", type: "text", default: "/webhook" },
+          { key: "webhookMethod", label: "Webhook Method", type: "select", options: ["POST", "GET", "PUT"], default: "POST" },
         ],
         action: [
-          { key: "actionType", label: "Action Type", type: "select", options: ["HTTP Request", "Send Email", "Run Script", "Write File", "Notify", "AI Query", "Delay", "PDF Generate", "PDF Extract", "OCR", "Database"], default: "HTTP Request" },
+          { key: "actionType", label: "Action Type", type: "select", options: ["HTTP Request", "Send Email", "Run Script", "Write File", "Notify", "AI Query", "Delay", "PDF Generate", "PDF Extract", "OCR", "Database", "Telegram Bot", "Slack Message"], default: "HTTP Request" },
           { key: "url", label: "URL / Endpoint", type: "text", default: "https://api.github.com" },
           { key: "method", label: "Method", type: "select", options: ["GET", "POST", "PUT", "DELETE", "PATCH"], default: "GET" },
           { key: "headers", label: "Headers (JSON)", type: "textarea", default: '{\n  "Accept": "application/json"\n}' },
@@ -754,6 +779,22 @@
           { key: "dbPath", label: "SQLite File Path", type: "text", default: "./data.db" },
           { key: "dbQuery", label: "SQL Query", type: "textarea", rows: 4, default: "SELECT * FROM users LIMIT 10;" },
           { key: "dbWrite", label: "Write Result To (optional)", type: "text", default: "" },
+          { key: "telegramChat", label: "Telegram Chat ID", type: "text", default: "" },
+          { key: "telegramMessage", label: "Message", type: "textarea", rows: 3, default: "Maurya alert: {{data}}" },
+          { key: "slackWebhook", label: "Slack Webhook URL", type: "text", default: "" },
+          { key: "slackMessage", label: "Message", type: "textarea", rows: 3, default: "Maurya alert: {{data}}" },
+          { key: "slackUsername", label: "Bot Username", type: "text", default: "Maurya Automation" },
+        ],
+        setvar: [
+          { key: "name", label: "Variable Name", type: "text", default: "myVar" },
+          { key: "value", label: "Value (supports {{data}})", type: "textarea", rows: 3, default: "{{data}}" },
+        ],
+        filter: [
+          { key: "expression", label: "Keep where (item, index, vars)", type: "textarea", rows: 3, default: "item.active" },
+        ],
+        loop: [
+          { key: "items", label: "Items (JSON array or expression)", type: "textarea", rows: 4, default: "[1,2,3]" },
+          { key: "variable", label: "Loop Variable Name", type: "text", default: "item" },
         ],
         condition: [
           { key: "condition", label: "Condition Expression", type: "textarea", default: "data && data.ok" },
@@ -961,13 +1002,14 @@
       this.switchPanel("logs");
       this.addLog("info", `Starting workflow: ${run.workflow}`);
 
-      // MQTT-triggered workflows run in watch mode (persistent subscriber)
+      // Watcher-triggered workflows (MQTT / Webhook / File Watch) run in watch mode
       const nodesArr = Array.from(this.state.nodes.values());
-      const mqttTrigger = nodesArr.find(
-        (n) => n.type === "trigger" && String(n.config?.triggerType || "").toLowerCase() === "mqtt"
-      );
-      if (mqttTrigger) {
-        this.armMqttWorkflow(run, mqttTrigger);
+      const watcherTrigger = nodesArr.find((n) => {
+        const t = String(n.config?.triggerType || "").toLowerCase();
+        return n.type === "trigger" && ["mqtt", "webhook", "file-watch", "filewatch"].includes(t);
+      });
+      if (watcherTrigger) {
+        this.armWatcher(run, watcherTrigger);
         return;
       }
 
@@ -975,18 +1017,25 @@
       this.executeWorkflow(nodesArr, run);
     },
 
-    async armMqttWorkflow(run, triggerNode) {
+    async armWatcher(run, triggerNode) {
       const workflow = this.serializeWorkflow();
-      this.addLog("info", `Arming MQTT watcher → ${triggerNode.config.broker || "default broker"}, topic "${triggerNode.config.topic || "#"}"`);
-      this.addLog("info", "Workflow will run automatically on each incoming MQTT message. Click Run again to disarm.");
+      const t = String(triggerNode.config.triggerType || "").toLowerCase();
+      const label =
+        t === "webhook"
+          ? `Webhook server on :${triggerNode.config.webhookPort || 3030}${triggerNode.config.webhookPath || "/webhook"}`
+          : t === "file-watch" || t === "filewatch"
+          ? `File watcher on "${triggerNode.config.path || "."}"`
+          : `MQTT watcher → ${triggerNode.config.broker || "default broker"}, topic "${triggerNode.config.topic || "#"}"`;
+      this.addLog("info", `Arming ${label}`);
+      this.addLog("info", "Workflow will run automatically on each event. Click Run again to disarm.");
       this.state.mqttArmed = { id: workflow.id };
       run.status = "watching";
       this.updateRunBadge();
       try {
-        await window.maurya.mqttArm(workflow);
-        this.toast("info", "MQTT watcher armed", "Listening for messages…");
+        await window.maurya.watchArm(workflow);
+        this.toast("info", "Watcher armed", "Listening for events…");
       } catch (e) {
-        this.addLog("error", `MQTT arm failed: ${e.message}`);
+        this.addLog("error", `Watcher arm failed: ${e.message}`);
         run.status = "failed";
         this.state.mqttArmed = null;
         this.updateRunBadge();
@@ -995,25 +1044,28 @@
 
     disarmMqttWorkflow() {
       if (this.state.mqttArmed) {
-        window.maurya.mqttDisarm(this.state.mqttArmed.id);
+        window.maurya.watchDisarm(this.state.mqttArmed.id);
         this.state.mqttArmed = null;
-        this.addLog("info", "MQTT watcher disarmed");
-        this.toast("info", "MQTT watcher disarmed", "");
+        this.addLog("info", "Watcher disarmed");
+        this.toast("info", "Watcher disarmed", "");
       }
     },
 
     async executeWorkflow(nodes, run) {
       const context = { vars: {}, lastOutput: null };
+      const executed = new Set();
       let allSuccess = true;
 
       for (let i = 0; i < nodes.length; i++) {
         const node = nodes[i];
+        if (node.status && node.status !== "idle") continue;
         node.status = "running";
         this.updateNodeStatus(node);
         this.addLog("info", `Executing node: ${node.name} (${node.type})`);
 
         try {
           const result = await this.executeNode(node, context);
+          executed.add(node.id);
           node.status = "success";
           node.output = result;
           this.updateNodeStatus(node);
@@ -1173,6 +1225,23 @@
               })
             );
           }
+          if (at === "Telegram Bot") {
+            return runWithRetry(() =>
+              window.maurya.executeAction("telegram", {
+                chatId: cfg.telegramChat,
+                message: this.interpolate(cfg.telegramMessage, context),
+              })
+            );
+          }
+          if (at === "Slack Message") {
+            return runWithRetry(() =>
+              window.maurya.executeAction("slack", {
+                webhook: cfg.slackWebhook,
+                message: this.interpolate(cfg.slackMessage, context),
+                username: cfg.slackUsername,
+              })
+            );
+          }
           throw new Error(`Unknown action type: ${at}`);
         }
         case "condition": {
@@ -1196,6 +1265,61 @@
         case "custom": {
           return runWithRetry(() => window.maurya.runScript(cfg.script || "", "javascript"));
         }
+        case "setvar": {
+          const name = cfg.name || "value";
+          const raw = cfg.value !== undefined && cfg.value !== "" ? this.interpolate(cfg.value, context) : JSON.stringify(context.lastOutput);
+          let value = raw;
+          try { value = JSON.parse(raw); } catch (_) {}
+          context.vars[name] = value;
+          this.addLog("info", `Set variable ${name} = ${this.truncate(raw, 60)}`);
+          return { set: name, value };
+        }
+        case "filter": {
+          const arr = Array.isArray(context.lastOutput) ? context.lastOutput : [];
+          const expr = cfg.expression || "true";
+          let filtered;
+          try {
+            filtered = arr.filter((item, i) => !!new Function("item", "index", "vars", `return (${expr});`)(item, i, context.vars));
+          } catch (e) {
+            throw new Error(`Filter error: ${e.message}`);
+          }
+          this.addLog("info", `Filter kept ${filtered.length}/${arr.length} items`);
+          return filtered;
+        }
+        case "loop": {
+          let items = [];
+          try {
+            items = JSON.parse(cfg.items || "[]");
+          } catch (_) {
+            try {
+              items = new Function("data", "vars", `return (${cfg.items || "[]"});`)(context.lastOutput, context.vars);
+            } catch (e) {
+              throw new Error(`Loop items error: ${e.message}`);
+            }
+          }
+          if (!Array.isArray(items)) items = [items];
+          const varName = cfg.variable || "item";
+          const all = Array.from(this.state.nodes.values());
+          const nodeIndex = all.findIndex((n) => n.id === node.id);
+          const bodyNodes = all.slice(nodeIndex + 1);
+          this.addLog("info", `Loop: ${items.length} iterations → $${varName}`);
+          for (let i = 0; i < items.length; i++) {
+            context.vars[varName] = items[i];
+            context.lastOutput = items[i];
+            this.addLog("info", `— iteration ${i + 1}/${items.length}`);
+            for (const bn of bodyNodes) {
+              bn.status = "running";
+              this.updateNodeStatus(bn);
+              const r = await this.executeNode(bn, context);
+              bn.status = "success";
+              bn.output = r;
+              this.updateNodeStatus(bn);
+              this.addLog("success", `  ✓ ${bn.name} (loop ${i + 1})`);
+              context.lastOutput = r;
+            }
+          }
+          return { looped: items.length };
+        }
         default:
           throw new Error(`Unknown node type: ${node.type}`);
       }
@@ -1203,9 +1327,16 @@
 
     interpolate(str, context) {
       if (!str) return str;
-      return String(str).replace(/\{\{\s*(\w+)\s*\}\}/g, (_, k) => {
-        if (k === "data") return JSON.stringify(context.lastOutput);
-        if (context.vars && k in context.vars) return context.vars[k];
+      return String(str).replace(/\{\{\s*([\w.]+)\s*\}\}/g, (_, k) => {
+        const parts = k.split(".");
+        const resolve = (root) => {
+          let v = root;
+          for (const p of parts.slice(1)) v = v == null ? undefined : v[p];
+          if (v === undefined) return "";
+          return typeof v === "object" ? JSON.stringify(v) : String(v);
+        };
+        if (parts[0] === "data") return resolve(context.lastOutput);
+        if (parts[0] === "vars") return resolve(context.vars);
         return "";
       });
     },
@@ -1538,12 +1669,12 @@
       render();
     },
 
-    initMqttBridge() {
-      if (!window.maurya || !window.maurya.onMqttLog) return;
-      window.maurya.onMqttLog((data) => {
+    initWatcherBridge() {
+      if (!window.maurya || !window.maurya.onWatcherLog) return;
+      window.maurya.onWatcherLog((data) => {
         if (data.lvl) this.addLog(data.lvl, data.msg);
       });
-      window.maurya.onMqttNode((data) => {
+      window.maurya.onWatcherNode((data) => {
         const node = this.state.nodes.get(data.nodeId);
         if (node) {
           node.status = data.state;
@@ -1591,6 +1722,176 @@
         .join("");
     },
 
+    // ── Import / Export ───────────────────────────────────────
+    async importWorkflow() {
+      const fp = await window.maurya.pickFile();
+      if (!fp) return;
+      try {
+        const content = await window.maurya.readFile(fp);
+        const wf = JSON.parse(content);
+        this.loadWorkflowFromObject(wf);
+        this.toast("success", "Workflow imported", wf.name || fp);
+      } catch (e) {
+        this.toast("error", "Import failed", e.message);
+      }
+    },
+
+    exportWorkflow() {
+      const wf = this.serializeWorkflow();
+      const blob = new Blob([JSON.stringify(wf, null, 2)], { type: "application/json" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `${(wf.name || "workflow").replace(/[^a-z0-9_-]+/gi, "_")}.maurya.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(a.href);
+      this.toast("success", "Workflow exported", a.download);
+    },
+
+    // ── Marketplace ───────────────────────────────────────────
+    MARKETPLACE_TEMPLATES: [
+      {
+        name: "Daily DB → PDF → Email",
+        desc: "On a schedule, query SQLite, build a PDF and email it.",
+        workflow: {
+          name: "Daily DB → PDF → Email",
+          nodes: [
+            { id: "t", type: "trigger", name: "Schedule", config: { triggerType: "Schedule", schedule: "0 9 * * *" } },
+            { id: "q", type: "action", name: "Query DB", config: { actionType: "Database", dbType: "sqlite", dbPath: "./data.db", dbQuery: "SELECT * FROM users;" } },
+            { id: "p", type: "action", name: "Make PDF", config: { actionType: "PDF Generate", pdfTitle: "Daily Report", pdfContent: "{{data}}", pdfPath: "./report.pdf" } },
+            { id: "e", type: "action", name: "Email", config: { actionType: "Send Email", to: "dm7178072@gmail.com", subject: "Daily Report", text: "Attached." } },
+          ],
+          connections: [
+            { id: "c1", from: "t", to: "q" },
+            { id: "c2", from: "q", to: "p" },
+            { id: "c3", from: "p", to: "e" },
+          ],
+        },
+      },
+      {
+        name: "Webhook → Slack",
+        desc: "Expose a local webhook; post each request to Slack.",
+        workflow: {
+          name: "Webhook → Slack",
+          nodes: [
+            { id: "t", type: "trigger", name: "Webhook", config: { triggerType: "Webhook", webhookPort: "3030", webhookPath: "/webhook", webhookMethod: "POST" } },
+            { id: "s", type: "action", name: "Slack", config: { actionType: "Slack Message", slackMessage: "Incoming: {{data}}" } },
+          ],
+          connections: [{ id: "c1", from: "t", to: "s" }],
+        },
+      },
+      {
+        name: "MQTT Logger",
+        desc: "Subscribe to an MQTT topic and append each message to a file.",
+        workflow: {
+          name: "MQTT Logger",
+          nodes: [
+            { id: "t", type: "trigger", name: "MQTT", config: { triggerType: "MQTT", broker: "mqtt://broker.emqx.io:1883", topic: "maurya/+/events" } },
+            { id: "w", type: "action", name: "Log", config: { actionType: "Write File", path: "./mqtt.log", content: "{{data.message}}" } },
+          ],
+          connections: [{ id: "c1", from: "t", to: "w" }],
+        },
+      },
+      {
+        name: "File Watch → Telegram",
+        desc: "Watch a folder; alert on Telegram when a file changes.",
+        workflow: {
+          name: "File Watch → Telegram",
+          nodes: [
+            { id: "t", type: "trigger", name: "File Watch", config: { triggerType: "File Watch", path: "." } },
+            { id: "g", type: "action", name: "Telegram", config: { actionType: "Telegram Bot", telegramMessage: "File changed: {{data.filename}}" } },
+          ],
+          connections: [{ id: "c1", from: "t", to: "g" }],
+        },
+      },
+      {
+        name: "For-Each Loop",
+        desc: "Loop over an array and write each item to a file.",
+        workflow: {
+          name: "For-Each Loop",
+          nodes: [
+            { id: "t", type: "trigger", name: "Manual", config: { triggerType: "Manual" } },
+            { id: "l", type: "loop", name: "Loop Items", config: { items: "[\"alpha\",\"beta\",\"gamma\"]", variable: "item" } },
+            { id: "w", type: "action", name: "Write", config: { actionType: "Write File", path: "./loop.txt", content: "{{item}}" } },
+          ],
+          connections: [
+            { id: "c1", from: "t", to: "l" },
+            { id: "c2", from: "l", to: "w" },
+          ],
+        },
+      },
+    ],
+
+    initMarketplace() {
+      const grid = this.el.marketplaceGrid;
+      if (!grid) return;
+      grid.innerHTML = "";
+      this.MARKETPLACE_TEMPLATES.forEach((tpl, i) => {
+        const card = document.createElement("div");
+        card.className = "marketplace-card";
+        card.innerHTML = `
+          <div class="marketplace-card-icon">⚡</div>
+          <h4>${tpl.name}</h4>
+          <p>${tpl.desc}</p>
+          <button class="btn btn-primary btn-sm" data-template="${i}">Use template</button>
+        `;
+        card.querySelector("[data-template]").addEventListener("click", () => {
+          this.loadWorkflowFromObject(JSON.parse(JSON.stringify(tpl.workflow)));
+          this.switchView("canvas");
+          this.toast("success", "Template loaded", tpl.name);
+        });
+        grid.appendChild(card);
+      });
+    },
+
+    // ── Cloud Sync (GitHub Gist) ──────────────────────────────
+    async initCloudSync() {
+      if (!this.el.cloudPush) return;
+      this.el.cloudPush.addEventListener("click", async () => {
+        try {
+          const res = await window.maurya.cloudPush(this.serializeWorkflow());
+          this.toast("success", "Synced to cloud", res.url);
+        } catch (e) {
+          this.toast("error", "Cloud push failed", e.message);
+        }
+      });
+      this.el.cloudPull.addEventListener("click", async () => {
+        try {
+          const res = await window.maurya.cloudPull();
+          this.renderCloudList(res.files || []);
+        } catch (e) {
+          this.toast("error", "Cloud pull failed", e.message);
+        }
+      });
+    },
+
+    renderCloudList(files) {
+      const list = this.el.cloudList;
+      if (!list) return;
+      if (files.length === 0) {
+        list.innerHTML = `<p class="muted">No synced workflows yet. Push one first.</p>`;
+        return;
+      }
+      list.innerHTML = "";
+      files.forEach((f) => {
+        const row = document.createElement("div");
+        row.className = "cloud-row";
+        row.innerHTML = `<span>${f.name}</span><button class="btn btn-ghost btn-sm" data-cloud-import="${f.name}">Import</button>`;
+        row.querySelector("[data-cloud-import]").addEventListener("click", () => {
+          try {
+            const wf = JSON.parse(f.content);
+            this.loadWorkflowFromObject(wf);
+            this.switchView("canvas");
+            this.toast("success", "Imported from cloud", f.name);
+          } catch (e) {
+            this.toast("error", "Import failed", e.message);
+          }
+        });
+        list.appendChild(row);
+      });
+    },
+
     handleKeydown(e) {
       const key = e.key.toLowerCase();
       const ctrl = e.ctrlKey || e.metaKey;
@@ -1623,8 +1924,10 @@
       } else if (key === "2") {
         this.switchView("library");
       } else if (key === "3") {
-        this.switchView("runs");
+        this.switchView("marketplace");
       } else if (key === "4") {
+        this.switchView("runs");
+      } else if (key === "5") {
         this.switchView("settings");
       } else if (key === "+" || key === "=") {
         this.setZoom(this.state.zoom * 1.2);

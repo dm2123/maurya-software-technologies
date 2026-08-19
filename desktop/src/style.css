@@ -1228,6 +1228,40 @@ ul, ol { list-style: none; }
   padding: 4px;
 }
 
+/* ── Marketplace ─────────────────────────────────────────── */
+.marketplace-header { margin-bottom: 18px; }
+.marketplace-header h2 { font-size: 20px; margin-bottom: 4px; }
+.marketplace-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px;
+}
+.marketplace-card {
+  background: var(--paper-soft);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.marketplace-card-icon { font-size: 22px; }
+.marketplace-card h4 { font-size: 14px; }
+.marketplace-card p { font-size: 12px; color: var(--muted-soft); flex: 1; line-height: 1.5; }
+.marketplace-card .btn { margin-top: 6px; align-self: flex-start; }
+
+/* ── Cloud Sync ──────────────────────────────────────────── */
+.cloud-actions { display: flex; gap: 10px; margin: 14px 0; }
+.cloud-list { display: flex; flex-direction: column; gap: 8px; }
+.cloud-row {
+  display: flex; align-items: center; justify-content: space-between;
+  background: var(--paper-soft); border: 1px solid var(--border);
+  border-radius: 8px; padding: 10px 14px; font-size: 13px;
+}
+
+/* ── Small buttons ───────────────────────────────────────── */
+.btn-sm { padding: 6px 12px; font-size: 12px; }
+
 @media (max-width: 1200px) {
   .sidebar { width: 76px; min-width: 76px; }
   .sidebar:not(.collapsed) .sidebar-nav .nav-item span { display: inline; }

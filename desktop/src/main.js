@@ -291,11 +291,12 @@ async function handleAction(event, { type, config }) {
 // ── MQTT Watch Manager ──────────────────────────────────────
 const mqttWatchers = {};
 
-async function mqttArm(event, workflow) {
-  const trigger = (workflow.nodes || []).find(
-    (n) => n.type === "trigger" && String(n.config?.triggerType || "").toLowerCase() === "mqtt"
-  );
-  if (!trigger) throw new Error("Workflow has no MQTT trigger");
+async function watchArm(event, workflow) {
+  const trigger = (workflow.nodes || []).find((n) => n.type === "trigger");
+  const t = String(trigger?.config?.triggerType || "").toLowerCase();
+  if (!["mqtt", "webhook", "file-watch", "filewatch"].includes(t)) {
+    throw new Error("Workflow has no watcher trigger (MQTT / Webhook / File Watch)");
+  }
   const existing = mqttWatchers[workflow.id];
   if (existing) existing.stop();
   const { executeWorkflow } = require("../core/engine");
@@ -303,17 +304,17 @@ async function mqttArm(event, workflow) {
   const control = await executeWorkflow(workflow, {
     secrets,
     onLog: (lvl, msg) => {
-      if (win) win.webContents.send("mqtt:log", { id: workflow.id, lvl, msg });
+      if (win) win.webContents.send("watcher:log", { id: workflow.id, lvl, msg });
     },
     onNode: (id, state) => {
-      if (win) win.webContents.send("mqtt:node", { id: workflow.id, nodeId: id, state });
+      if (win) win.webContents.send("watcher:node", { id: workflow.id, nodeId: id, state });
     },
   });
   mqttWatchers[workflow.id] = control;
-  return { armed: true };
+  return { armed: true, trigger: t };
 }
 
-function mqttDisarm(_event, id) {
+function watchDisarm(_event, id) {
   if (mqttWatchers[id]) {
     mqttWatchers[id].stop();
     delete mqttWatchers[id];
@@ -504,8 +505,53 @@ ipcMain.handle("scheduler:add", handleSchedulerAdd);
 ipcMain.handle("scheduler:remove", handleSchedulerRemove);
 ipcMain.handle("scheduler:runNow", handleSchedulerRunNow);
 ipcMain.handle("action:execute", handleAction);
-ipcMain.handle("mqtt:arm", mqttArm);
-ipcMain.handle("mqtt:disarm", mqttDisarm);
+ipcMain.handle("watcher:arm", watchArm);
+ipcMain.handle("watcher:disarm", watchDisarm);
+
+// ── Cloud Sync (GitHub Gist) ────────────────────────────────
+async function cloudPush(_event, workflow) {
+  const token = secrets["github_token"];
+  if (!token) throw new Error("Set a 'github_token' secret to use Cloud Sync");
+  const gistId = secrets["gist_id"];
+  const fileName = `${(workflow.name || "workflow").replace(/[^a-z0-9_-]+/gi, "_")}.maurya.json`;
+  const content = JSON.stringify(workflow, null, 2);
+  const headers = { Authorization: `Bearer ${token}`, "Content-Type": "application/json", Accept: "application/vnd.github+json" };
+  if (gistId) {
+    const res = await fetch(`https://api.github.com/gists/${gistId}`, {
+      method: "PATCH",
+      headers,
+      body: JSON.stringify({ files: { [fileName]: { content } } }),
+    });
+    if (!res.ok) throw new Error(`Gist update failed (${res.status})`);
+    return { ok: true, gistId, url: `https://gist.github.com/${gistId}` };
+  }
+  const res = await fetch("https://api.github.com/gists", {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ public: false, description: "Maurya Automation Suite workflows", files: { [fileName]: { content } } }),
+  });
+  if (!res.ok) throw new Error(`Gist create failed (${res.status})`);
+  const data = await res.json();
+  secrets["gist_id"] = data.id;
+  saveSecrets();
+  return { ok: true, gistId: data.id, url: data.html_url };
+}
+
+async function cloudPull() {
+  const token = secrets["github_token"];
+  const gistId = secrets["gist_id"];
+  if (!token || !gistId) throw new Error("Set 'github_token' and sync once to enable pull");
+  const res = await fetch(`https://api.github.com/gists/${gistId}`, {
+    headers: { Authorization: `Bearer ${token}`, Accept: "application/vnd.github+json" },
+  });
+  if (!res.ok) throw new Error(`Gist fetch failed (${res.status})`);
+  const data = await res.json();
+  const files = Object.entries(data.files || {}).map(([name, f]) => ({ name, content: f.content }));
+  return { files };
+}
+
+ipcMain.handle("cloud:push", cloudPush);
+ipcMain.handle("cloud:pull", cloudPull);
 
 app.whenReady().then(() => {
   createWindow();

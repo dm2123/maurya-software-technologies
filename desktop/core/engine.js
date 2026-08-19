@@ -7,10 +7,14 @@
  * the Electron main process for scheduled/headless runs.
  *
  * Supported node types:
- *   trigger  → emits a context object
+ *   trigger  → manual | schedule | webhook | file-watch | mqtt
  *   action   → http | email | script | file-write | notify | ai | delay
+ *             | pdf-generate | pdf-extract | ocr | database | telegram | slack
  *   condition→ evaluates a JS expression against the previous output
  *   transform→ runs a JS transform on the previous output
+ *   filter   → keeps array items matching a JS expression
+ *   setvar   → assigns a variable from {{data}} or a literal
+ *   loop     → repeats the downstream body once per item in an array
  *   custom   → runs a JS script
  */
 
@@ -83,6 +87,10 @@ async function handleAction(type, config, ctx, secrets, log) {
     "pdf extract": "pdf-extract",
     "ocr": "ocr",
     "database": "database",
+    "telegram": "telegram",
+    "telegram bot": "telegram",
+    "slack": "slack",
+    "slack message": "slack",
   }[String(type || "").toLowerCase().trim()] || String(type || "").toLowerCase();
 
   switch (normalized) {
@@ -133,7 +141,9 @@ async function handleAction(type, config, ctx, secrets, log) {
       throw new Error(`Unsupported script language: ${lang}`);
     }
     case "email": {
-      const { to, subject, text, html, from } = config;
+      const { to, html, from } = config;
+      const subject = interpolate(config.subject || "", ctx);
+      const text = interpolate(config.text || "", ctx);
       if (!to || !subject) throw new Error("Email requires to + subject");
       const s = secrets["smtp"] || {};
       if (!s.host || !s.user || !s.pass) {
@@ -169,7 +179,7 @@ async function handleAction(type, config, ctx, secrets, log) {
       return { delayed: true, ms };
     }
     case "notify": {
-      return { notified: true, title: config.title, message: config.message };
+      return { notified: true, title: interpolate(config.title || "", ctx), message: interpolate(config.message || "", ctx) };
     }
     case "pdf-generate": {
       const PDFDocument = require("pdfkit");
@@ -277,6 +287,34 @@ async function handleAction(type, config, ctx, secrets, log) {
       }
       throw new Error(`Database type '${dbType}' not supported locally. Use sqlite, or set db_connection secret for postgres/mysql (drivers optional).`);
     }
+    case "telegram": {
+      const token = secrets["telegram_token"] || config.token;
+      if (!token) throw new Error("Telegram needs telegram_token secret");
+      const chatId = config.chatId || secrets["telegram_chat"];
+      if (!chatId) throw new Error("Telegram needs a chat id (config.chatId or telegram_chat secret)");
+      const text = interpolate(config.message || config.text || "", ctx);
+      const url = `https://api.telegram.org/bot${token}/sendMessage`;
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chat_id: chatId, text, parse_mode: config.parseMode || "Markdown" }),
+      });
+      const data = await res.json();
+      if (!data.ok) throw new Error(`Telegram error: ${data.description}`);
+      return { sent: true, messageId: data.result?.message_id };
+    }
+    case "slack": {
+      const webhook = config.webhook || secrets["slack_webhook"];
+      if (!webhook) throw new Error("Slack needs a webhook URL (config.webhook or slack_webhook secret)");
+      const text = interpolate(config.message || config.text || "", ctx);
+      const res = await fetch(webhook, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text, username: config.username || "Maurya Automation", blocks: config.blocks ? JSON.parse(config.blocks) : undefined }),
+      });
+      if (!res.ok) throw new Error(`Slack error: ${res.status}`);
+      return { sent: true, status: res.status };
+    }
     default:
       throw new Error(`Unknown action type: ${type}`);
   }
@@ -284,9 +322,16 @@ async function handleAction(type, config, ctx, secrets, log) {
 
 function interpolate(str, ctx) {
   if (!str) return str;
-  return String(str).replace(/\{\{\s*(\w+)\s*\}\}/g, (_, k) => {
-    if (k === "data") return JSON.stringify(ctx.lastOutput);
-    if (ctx.vars && k in ctx.vars) return ctx.vars[k];
+  return String(str).replace(/\{\{\s*([\w.]+)\s*\}\}/g, (_, k) => {
+    const parts = k.split(".");
+    const resolve = (root) => {
+      let v = root;
+      for (const p of parts.slice(1)) v = v == null ? undefined : v[p];
+      if (v === undefined) return "";
+      return typeof v === "object" ? JSON.stringify(v) : String(v);
+    };
+    if (parts[0] === "data") return resolve(ctx.lastOutput);
+    if (parts[0] === "vars") return resolve(ctx.vars);
     return "";
   });
 }
@@ -311,86 +356,113 @@ async function executeWorkflow(workflow, options = {}) {
 
   log("info", `Workflow "${workflow.name || "untitled"}": ${order.length} nodes`);
 
-  // MQTT watcher mode: subscribe and run the body on each message
-  const mqttTrigger = order.find(
-    (n) => n.type === "trigger" && String(n.config?.triggerType || "").toLowerCase() === "mqtt"
-  );
-  if (mqttTrigger) {
-    return runMqttWatch(workflow, mqttTrigger, order, { ctx, results, start, secrets, log, onNode, options });
-  }
+  const env = { ctx, results, start, secrets, log, onNode, options };
+  const triggerNode = order.find((n) => n.type === "trigger");
+  const triggerType = String(triggerNode?.config?.triggerType || "").toLowerCase();
 
-  for (const node of order) {
-    const cfg = node.config || {};
-    const retries = parseInt(cfg.retries || "0", 10);
-    const retryDelay = parseInt(cfg.retryDelay || "1000", 10);
+  // Watcher / server modes keep the process alive
+  if (triggerType === "mqtt") return runMqttWatch(workflow, triggerNode, order, env);
+  if (triggerType === "webhook") return runWebhook(workflow, triggerNode, order, env);
+  if (triggerType === "file-watch" || triggerType === "filewatch") return runFileWatch(workflow, triggerNode, order, env);
 
-    onNode(node.id, "running");
-    log("info", `▶ ${node.name} (${node.type})`);
+  // Iteration mode: a "loop" node repeats the downstream body per item
+  const loopNode = order.find((n) => n.type === "loop");
+  if (loopNode) return runLoop(workflow, loopNode, order, env);
 
-    let output;
-    let ok = false;
-    try {
-      const run = async () => {
-        switch (node.type) {
-          case "trigger": {
-            const t = cfg.triggerType || "Manual";
-            if (t === "Schedule") return { triggered: true, type: "schedule" };
-            if (t === "Webhook") return { triggered: true, type: "webhook" };
-            if (t === "File Watch") return { triggered: true, type: "file-watch", path: cfg.path };
-            return { triggered: true, type: "manual" };
-          }
-          case "action":
-            return handleAction(cfg.actionType || "HTTP Request", cfg, ctx, secrets, log);
-          case "condition": {
-            const expr = cfg.condition || "true";
-            const pass = !!new Function("data", "vars", `return (${expr});`)(ctx.lastOutput, ctx.vars);
-            node.branch = pass ? "true" : "false";
-            log("info", `  condition "${expr}" → ${pass ? "PASS" : "FAIL"}`);
-            return { passed: pass, expression: expr };
-          }
-          case "transform": {
-            const fn = new Function("data", "vars", cfg.transform || "return data;");
-            return fn(ctx.lastOutput, ctx.vars);
-          }
-          case "custom":
-            return handleAction("script", { script: cfg.script, lang: "javascript" }, ctx, secrets, log);
-          default:
-            throw new Error(`Unknown node type: ${node.type}`);
-        }
-      };
+  const result = await runBody(order, env);
+  log("info", `Workflow complete in ${Date.now() - start}ms`);
+  return result;
+}
 
-      let lastErr;
-      for (let attempt = 0; attempt <= retries; attempt++) {
-        try {
-          output = await run();
-          ok = true;
-          break;
-        } catch (e) {
-          lastErr = e;
-          if (attempt < retries) {
-            log("warn", `  retry ${attempt + 1}/${retries} in ${retryDelay}ms (${e.message})`);
-            await new Promise((r) => setTimeout(r, retryDelay));
-          }
-        }
+async function runOneNode(node, ctx, env) {
+  const { secrets, log, onNode, results } = env;
+  const cfg = node.config || {};
+  onNode(node.id, "running");
+  log("info", `▶ ${node.name} (${node.type})`);
+  const retries = parseInt(cfg.retries || "0", 10);
+  const retryDelay = parseInt(cfg.retryDelay || "1000", 10);
+
+  let output;
+  let ok = false;
+  const run = async () => {
+    switch (node.type) {
+      case "trigger": {
+        const t = cfg.triggerType || "Manual";
+        if (t === "Schedule") return { triggered: true, type: "schedule" };
+        if (t === "Webhook") return { triggered: true, type: "webhook" };
+        if (t === "File Watch" || t === "FileWatch") return { triggered: true, type: "file-watch", path: cfg.path };
+        return { triggered: true, type: "manual" };
       }
-      if (!ok) throw lastErr;
+      case "action":
+        return handleAction(cfg.actionType || "HTTP Request", cfg, ctx, secrets, log);
+      case "condition": {
+        const expr = cfg.condition || "true";
+        const pass = !!new Function("data", "vars", `return (${expr});`)(ctx.lastOutput, ctx.vars);
+        node.branch = pass ? "true" : "false";
+        log("info", `  condition "${expr}" → ${pass ? "PASS" : "FAIL"}`);
+        return { passed: pass, expression: expr };
+      }
+      case "transform": {
+        const fn = new Function("data", "vars", cfg.transform || "return data;");
+        return fn(ctx.lastOutput, ctx.vars);
+      }
+      case "filter": {
+        const arr = Array.isArray(ctx.lastOutput) ? ctx.lastOutput : JSON.parse(JSON.stringify(ctx.lastOutput || []));
+        const expr = cfg.expression || "true";
+        const filtered = arr.filter((item, i) => !!new Function("item", "index", "vars", `return (${expr});`)(item, i, ctx.vars));
+        return filtered;
+      }
+      case "setvar": {
+        const name = cfg.name || "value";
+        const value = cfg.value !== undefined && cfg.value !== "" ? interpolate(String(cfg.value), ctx) : ctx.lastOutput;
+        ctx.vars[name] = value;
+        return { set: name, value };
+      }
+      case "custom":
+        return handleAction("script", { script: cfg.script, lang: "javascript" }, ctx, secrets, log);
+      default:
+        throw new Error(`Unknown node type: ${node.type}`);
+    }
+  };
 
-      node.output = output;
-      node.status = "success";
-      results[node.id] = output;
-      ctx.lastOutput = output;
-      onNode(node.id, "success");
-      log("success", `  ✓ ${node.name}: ${summarize(output)}`);
+  let lastErr;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      output = await run();
+      ok = true;
+      break;
+    } catch (e) {
+      lastErr = e;
+      if (attempt < retries) {
+        log("warn", `  retry ${attempt + 1}/${retries} in ${retryDelay}ms (${e.message})`);
+        await new Promise((r) => setTimeout(r, retryDelay));
+      }
+    }
+  }
+  if (!ok) throw lastErr;
+
+  node.output = output;
+  node.status = "success";
+  results[node.id] = output;
+  ctx.lastOutput = output;
+  onNode(node.id, "success");
+  log("success", `  ✓ ${node.name}: ${summarize(output)}`);
+  return output;
+}
+
+async function runBody(nodes, env) {
+  const { ctx, results, start, log } = env;
+  for (const node of nodes) {
+    try {
+      await runOneNode(node, ctx, env);
     } catch (err) {
       node.status = "failed";
       node.error = err.message;
-      onNode(node.id, "failed");
+      env.onNode(node.id, "failed");
       log("error", `  ✗ ${node.name}: ${err.message}`);
       return { status: "failed", results, durationMs: Date.now() - start };
     }
   }
-
-  log("info", `Workflow complete in ${Date.now() - start}ms`);
   return { status: "success", results, durationMs: Date.now() - start };
 }
 
@@ -475,6 +547,84 @@ async function runMqttWatch(workflow, triggerNode, order, env) {
   });
 
   return control;
+}
+
+async function runWebhook(workflow, triggerNode, order, env) {
+  const { ctx, results, start, secrets, log, onNode } = env;
+  const http = require("http");
+  const port = parseInt(triggerNode.config.webhookPort || triggerNode.config.port || "3030", 10);
+  const route = (triggerNode.config.webhookPath || triggerNode.config.path || "/webhook").split("?")[0];
+  const method = (triggerNode.config.webhookMethod || triggerNode.config.method || "POST").toUpperCase();
+  const bodyNodes = order.filter((n) => n.id !== triggerNode.id);
+
+  const control = { status: "watching", stop: () => server.close() };
+  const server = http.createServer((req, res) => {
+    if (req.method.toUpperCase() !== method || !req.url.startsWith(route)) {
+      res.writeHead(404).end("not found");
+      return;
+    }
+    let raw = "";
+    req.on("data", (c) => (raw += c));
+    req.on("end", async () => {
+      let body = raw;
+      try { body = JSON.parse(raw); } catch (_) {}
+      const url = new URL(req.url, `http://localhost:${port}`);
+      ctx.lastOutput = { method: req.method, path: url.pathname, query: Object.fromEntries(url.searchParams), headers: req.headers, body };
+      if (triggerNode.config.variable) ctx.vars[triggerNode.config.variable] = body;
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ received: true }));
+      log("info", `▣ Webhook ${req.method} ${url.pathname}`);
+      const r = await runBody(bodyNodes, env);
+      log("success", `Webhook cycle: ${r.status} (${(Date.now() - start)}ms)`);
+    });
+  });
+  server.listen(port, () => log("info", `Webhook server listening on http://localhost:${port}${route} (${method})`));
+  return control;
+}
+
+function runFileWatch(workflow, triggerNode, order, env) {
+  const { ctx, log, onNode } = env;
+  const dir = triggerNode.config.path || ".";
+  const bodyNodes = order.filter((n) => n.id !== triggerNode.id);
+  const watcher = fs.watch(dir, { recursive: true }, async (eventType, filename) => {
+    if (!filename) return;
+    log("info", `▣ File event "${eventType}" → ${filename}`);
+    ctx.lastOutput = { event: eventType, filename, path: path.join(dir, filename), timestamp: new Date().toISOString() };
+    if (triggerNode.config.variable) ctx.vars[triggerNode.config.variable] = filename;
+    const r = await runBody(bodyNodes, env);
+    log("success", `File-watch cycle: ${r.status}`);
+  });
+  log("info", `Watching "${dir}" for file changes`);
+  return { status: "watching", stop: () => watcher.close() };
+}
+
+async function runLoop(workflow, loopNode, order, env) {
+  const { ctx, log, start } = env;
+  const source = loopNode.config.items;
+  let items = [];
+  try {
+    items = JSON.parse(source);
+  } catch (_) {
+    items = new Function("data", "vars", `return (${source || "[]"});`)(ctx.lastOutput, ctx.vars);
+  }
+  if (!Array.isArray(items)) items = [items];
+  const varName = loopNode.config.variable || "item";
+  const bodyNodes = order.filter((n) => n.id !== loopNode.id && n.type !== "trigger");
+  log("info", `Loop over ${items.length} item(s) → var "${varName}"`);
+  let i = 0;
+  for (const item of items) {
+    ctx.vars[varName] = item;
+    ctx.lastOutput = item;
+    log("info", `— iteration ${i + 1}/${items.length}`);
+    const r = await runBody(bodyNodes, env);
+    if (r.status === "failed") {
+      log("error", `Loop aborted at iteration ${i + 1}`);
+      return { status: "failed", results: env.results, durationMs: Date.now() - start };
+    }
+    i++;
+  }
+  log("info", `Loop complete (${items.length} iterations)`);
+  return { status: "success", results: env.results, durationMs: Date.now() - start };
 }
 
 function summarize(out) {
