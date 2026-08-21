@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/workflow.dart';
 import '../state/app_state.dart';
+import '../theme.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -104,15 +105,48 @@ class _HomeDrawer extends StatelessWidget {
         child: SafeArea(
           child: Column(
             children: [
-              const Padding(
-                padding: EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    Icon(Icons.auto_awesome, size: 32),
-                    SizedBox(width: 10),
-                    Text('Maurya Automation',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  ],
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [AppTheme.primary, AppTheme.violet],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                ),
+                child: const SafeArea(
+                  top: false,
+                  bottom: false,
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 22,
+                        backgroundColor: Colors.white24,
+                        child: Text('M',
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold)),
+                      ),
+                      SizedBox(width: 12),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text('Maurya Automation',
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.bold)),
+                          SizedBox(height: 2),
+                          Text('Automation Suite',
+                              style: TextStyle(
+                                  color: Colors.white70, fontSize: 12)),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
               const Divider(),

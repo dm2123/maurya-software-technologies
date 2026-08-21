@@ -27,6 +27,13 @@ class DownloadsScreen extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             const _PlatformCard(
+              platform: 'Android',
+              icon: Icons.smartphone,
+              desc: 'Maurya Automation in your pocket — you are using it now',
+              specs: ['app-debug.apk (~156 MB)', 'Runs workflows on-device', 'Webhook server · Email · PDF'],
+              buttons: [('Get latest APK', 'https://github.com/dm2123/maurya-software-technologies/releases/latest/download/app-debug.apk')],
+            ),
+            const _PlatformCard(
               platform: 'Windows',
               icon: Icons.window,
               desc: 'Squirrel installer with auto-updates',
