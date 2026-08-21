@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Maurya Flow Studio — Free Browser Automation Builder | Maurya Software Technologies</title>
+  <meta name="description" content="Design automation workflows visually in your browser. Drag nodes, connect steps, export JSON and run it in Maurya Automation for desktop and Android. 100% free, runs client-side.">
+  <meta name="robots" content="index,follow">
+  <link rel="canonical" href="https://dm2123.github.io/maurya-software-technologies/flow.html">
+  <meta property="og:title" content="Maurya Flow Studio — Browser Automation Builder">
+  <meta property="og:description" content="Visual workflow builder. Export JSON, run in Maurya Automation apps.">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="assets/logo.svg">
+  <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; connect-src 'self'; base-uri 'self'; form-action 'self';">
+  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/flow.css">
+</head>
+<body data-page="flow">
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="site-header">
+    <div class="container nav">
+      <a class="brand" href="index.html">
+        <img src="assets/logo.svg" alt="Maurya Software Technologies logo">
+        <div>Maurya Software Technologies<span>Flow Studio</span></div>
+      </a>
+      <button class="menu-toggle" type="button" data-menu-toggle aria-expanded="false" aria-label="Open menu">Menu</button>
+      <nav class="nav-links" data-nav-links>
+        <a href="index.html" data-nav="home">Home</a>
+        <a href="about.html" data-nav="about">About</a>
+        <a href="products.html" data-nav="products">Products</a>
+        <a href="services.html" data-nav="services">Services</a>
+        <a href="downloads.html" data-nav="downloads">Downloads</a>
+        <a href="flow.html" data-nav="flow">Flow Studio</a>
+        <a href="contact.html" data-nav="contact">Contact</a>
+        <a class="nav-cta" href="downloads.html">Download</a>
+      </nav>
+    </div>
+  </header>
+  <main id="main">
+    <div class="studio-bar">
+      <div class="container studio-bar-inner">
+        <span class="studio-brand">Flow Studio</span>
+        <input id="wf-name" type="text" value="My Automation" aria-label="Workflow name" spellcheck="false">
+        <div class="studio-actions">
+          <button id="btn-sample" type="button" class="fbtn">Sample</button>
+          <button id="btn-import" type="button" class="fbtn">Import</button>
+          <button id="btn-export" type="button" class="fbtn fbtn-primary">Export JSON</button>
+          <button id="btn-clear" type="button" class="fbtn fbtn-danger">Clear</button>
+          <input id="file-import" type="file" accept=".json,application/json" hidden>
+        </div>
+      </div>
+    </div>
+    <div class="studio container">
+      <aside class="palette" aria-label="Node palette">
+        <p class="palette-title">Nodes</p>
+        <div id="palette"></div>
+        <p class="palette-hint">Click a node to add it. Drag nodes on the canvas. Click the right port, then a left port to connect.</p>
+      </aside>
+      <section class="canvas-wrap" aria-label="Workflow canvas">
+        <div id="canvas">
+          <svg id="wires" xmlns="http://www.w3.org/2000/svg"><g id="wires-g"></g></svg>
+          <div id="nodes-layer"></div>
+          <p id="canvas-empty">Canvas is empty — add a Trigger from the left, then connect actions.</p>
+        </div>
+      </section>
+      <aside class="inspector" aria-label="Inspector">
+        <p class="palette-title">Inspector</p>
+        <div id="inspector-body">
+          <p class="muted small">Select a node on the canvas to edit it.</p>
+        </div>
+      </aside>
+    </div>
+    <div class="studio-status">
+      <div class="container studio-status-inner">
+        <span id="status-counts">0 nodes · 0 connections</span>
+        <span>Export this JSON and import it into Maurya Automation (Desktop or Android) to run it for real.</span>
+      </div>
+    </div>
+  </main>
+  <footer class="footer">
+    <div class="container legal">
+      <span>&copy; <span data-year></span> Maurya Software Technologies</span>
+      <a href="products.html">Products</a>
+      <a href="privacy.html">Privacy</a>
+    </div>
+  </footer>
+  <script src="assets/app.js"></script>
+  <script src="assets/flow.js"></script>
+</body>
+</html>

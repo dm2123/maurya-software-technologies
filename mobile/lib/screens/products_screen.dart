@@ -14,14 +14,24 @@ class ProductsScreen extends StatelessWidget {
         body: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            const Text('Software lines in this repository',
+            const Text('Three live automations. One company.',
                 style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             const Text(
-              'Statuses below describe what is actually present in this project.',
+              'Every product below is real, shipped and usable today.',
               style: TextStyle(color: Colors.grey),
             ),
             const SizedBox(height: 16),
+            _ProductCard(
+              title: 'Maurya Automation Suite',
+              desc: 'The flagship: a visual workflow engine with triggers, HTTP, '
+                  'email, PDF, loops and conditions. Runs on Windows, Linux, '
+                  'macOS — and on your Android phone.',
+              tags: const ['Status: live v1.0.5+', 'Windows', 'Linux', 'macOS', 'Android'],
+              live: true,
+              buttonLabel: 'View downloads',
+              onPressed: () => Navigator.pushNamed(context, '/downloads'),
+            ),
             _ProductCard(
               title: 'ConvertX',
               desc: '82+ free online file tools — compress, merge, split and '
@@ -32,13 +42,19 @@ class ProductsScreen extends StatelessWidget {
               onPressed: () => _open('https://convertx2026.netlify.app'),
             ),
             _ProductCard(
-              title: 'Maurya Desktop',
-              desc: 'Cross-platform desktop software for Windows, Linux and macOS.',
-              tags: const ['Status: available in repo', 'Windows', 'Linux', 'macOS'],
+              title: 'Maurya Flow Studio',
+              desc: 'Our unique browser-based visual automation builder. Drag '
+                  'nodes, wire them up, export JSON — then run the exact same '
+                  'flow in this app.',
+              tags: const ['Status: live · unique', 'Web', 'No install'],
               live: true,
-              buttonLabel: 'View downloads',
-              onPressed: () => Navigator.pushNamed(context, '/downloads'),
+              buttonLabel: 'Open Flow Studio',
+              onPressed: () => _open(
+                  'https://dm2123.github.io/maurya-software-technologies/flow.html'),
             ),
+            const Text('Platform lines',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
             _ProductCard(
               title: 'Maurya Web Platform',
               desc: 'Modern responsive web applications and digital platforms.',
