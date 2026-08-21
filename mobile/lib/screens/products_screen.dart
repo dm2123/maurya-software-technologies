@@ -23,6 +23,15 @@ class ProductsScreen extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             _ProductCard(
+              title: 'ConvertX',
+              desc: '82+ free online file tools — compress, merge, split and '
+                  'convert PDFs, images, QR codes and more. No signup required.',
+              tags: const ['Status: live', 'Web', 'Free tools'],
+              live: true,
+              buttonLabel: 'Open ConvertX',
+              onPressed: () => _open('https://convertx2026.netlify.app'),
+            ),
+            _ProductCard(
               title: 'Maurya Desktop',
               desc: 'Cross-platform desktop software for Windows, Linux and macOS.',
               tags: const ['Status: available in repo', 'Windows', 'Linux', 'macOS'],
